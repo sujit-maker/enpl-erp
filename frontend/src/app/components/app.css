@@ -1,0 +1,68 @@
+.custom-sidebar {
+  width: 250px;
+  padding: 15px;
+}
+
+.sidebar-label {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #070404;
+  margin-bottom: 10px;
+}
+
+.sidebar-item {
+  margin-bottom: 10px;
+}
+/* Custom styles for hover and active states */
+.dropdown-menu {
+  margin-top: 0.25rem;
+}
+.dropdown-item:hover {
+  background-color: #2d3748;
+  color: white;
+}
+
+.sidebar-button {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  color: #555;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-button:hover {
+  background-color: #e9ecef;
+  color: #000;
+}
+
+.sidebar-icon {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+.dropdown-menu {
+  padding-left: 20px;
+  margin-top: 5px;
+  color:#000
+}
+
+.dropdown-link {
+  display: block;
+  padding: 5px 10px;
+  color: #555;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.dropdown-link:hover {
+  color: #000;
+  text-decoration: underline;
+}
+
+.dropdown-icon {
+  margin-left: auto;
+  font-size: 1rem;
+}
