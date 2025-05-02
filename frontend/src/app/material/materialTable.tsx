@@ -12,10 +12,18 @@ interface Vendor {
   vendorName: string;
 }
 
+interface Site {
+  id: number;
+  siteName: string;
+  customerId: number;
+}
+
 interface Customer {
   id: number;
   customerName: string;
+  Sites: Site[]; 
 }
+
 
 interface Product {
   id: number;
@@ -37,6 +45,7 @@ interface FormData {
   deliveryType: string;
   refNumber?: string;
   customerId?: number;
+  siteId?: number;
   productId?: number;
   inventoryId?: number;
   vendorId?: number;
@@ -50,6 +59,7 @@ interface DeliveryItem {
   productName?: string;
   vendorId?: number;
   customerId?: number;
+  siteId?: number;
 
 }
 
@@ -57,12 +67,14 @@ const initialFormData: FormData = {
   deliveryType: "",
   refNumber: "",
   customerId: 0,
+  siteId: 0,  
   vendorId: 0,
   productId: 0,
   
 };
 
 const MaterialDeliveryForm: React.FC = () => {
+  const [sites, setSites] = useState<Site[]>([]);
   const [inventoryList, setInventoryList] = useState<InventoryItem[]>([]);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [items, setItems] = useState<DeliveryItem[]>([
@@ -75,6 +87,14 @@ const MaterialDeliveryForm: React.FC = () => {
   const [deliveryList, setDeliveryList] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+const [itemsPerPage] = useState(10); // Change as needed
+
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentDeliveries = deliveryList.slice(indexOfFirstItem, indexOfLastItem);
+const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
+
 
   const isSaleOrDemo =
     formData.deliveryType === "Sale" || formData.deliveryType === "Demo";
@@ -82,31 +102,41 @@ const MaterialDeliveryForm: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get("http://128.199.19.28:8000/customers")
+      .get("http://localhost:8000/customers")
       .then((res) => setCustomers(res.data));
     axios
-      .get("http://128.199.19.28:8000/vendors")
+      .get("http://localhost:8000/vendors")
       .then((res) => setVendors(res.data));
     axios
-      .get("http://128.199.19.28:8000/products")
+      .get("http://localhost:8000/products")
       .then((res) => setProducts(res.data));
     axios
-      .get("http://128.199.19.28:8000/inventory")
+      .get("http://localhost:8000/inventory")
       .then((res) => setInventory(res.data));
     fetchDeliveries(); // Fetch deliveries on component mount
   }, []);
 
   useEffect(() => {
     // Fetching inventory with associated product and vendor data
-    axios.get("http://128.199.19.28:8000/inventory").then((res) => {
+    axios.get("http://localhost:8000/inventory").then((res) => {
       setInventoryList(res.data);
     });
   }, []);
 
   const fetchDeliveries = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/material-delivery");
+    const res = await axios.get("http://localhost:8000/material-delivery");
     setDeliveryList(res.data);
   };
+  
+  useEffect(() => {
+    const selectedCustomer = customers.find(c => c.id === formData.customerId);
+    if (selectedCustomer) {
+      setSites(selectedCustomer.Sites || []);
+    } else {
+      setSites([]);
+    }
+  }, [formData.customerId, customers]);
+  
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -137,6 +167,10 @@ const MaterialDeliveryForm: React.FC = () => {
         updatedItems[index].inventoryId = found.id;
         updatedItems[index].serialNumber = found.serialNumber;
         updatedItems[index].macAddress = found.macAddress;
+        updatedItems[index].productName = found.product?.productName || "Unknown";
+        updatedItems[index].vendorId = found.vendorId;
+        updatedItems[index].customerId = formData.customerId || 0; // Set customerId from formData
+        updatedItems[index].siteId = formData.siteId || 0; // Set siteId from formData
       }
     }
 
@@ -154,10 +188,25 @@ const MaterialDeliveryForm: React.FC = () => {
   const handleSave = async () => {
     const isEdit = !!formData.id;
   
+
+    if (!formData.deliveryType) {
+      alert("Please select a delivery type");
+      return;
+    }
+    if (isSaleOrDemo && !formData.customerId) {
+      alert("Customer is required for Sale or Demo");
+      return;
+    }
+    if (isPurchaseReturn && !formData.vendorId) {
+      alert("Vendor is required for Purchase Return");
+      return;
+    }
+    
     // Map items array to include required fields
     const payload = {
       ...formData,
       customerId: isSaleOrDemo ? formData.customerId : undefined,
+      siteId: formData.siteId ? parseInt(formData.siteId.toString()) : undefined,
       vendorId: isPurchaseReturn ? formData.vendorId : undefined,
       materialDeliveryItems: items // Ensure this field includes all required item data
         .filter((item) => item.inventoryId) // Ensure items with inventoryId are included
@@ -174,12 +223,12 @@ const MaterialDeliveryForm: React.FC = () => {
     try {
       if (isEdit) {
         await axios.put(
-          `http://128.199.19.28:8000/material-delivery/${formData.id}`,
+          `http://localhost:8000/material-delivery/${formData.id}`,
           payload
         );
         alert("Delivery updated!");
       } else {
-        await axios.post("http://128.199.19.28:8000/material-delivery", payload);
+        await axios.post("http://localhost:8000/material-delivery", payload);
         alert("Delivery created!");
       }
   
@@ -211,6 +260,7 @@ const MaterialDeliveryForm: React.FC = () => {
         deliveryType: delivery.deliveryType,
         refNumber: delivery.refNumber,
         customerId: delivery.customerId || 0,
+        siteId: delivery.siteId || 0,
         vendorId: delivery.vendorId || 0,
       });
 
@@ -226,7 +276,7 @@ const MaterialDeliveryForm: React.FC = () => {
   const handleDelete = (id: any): void => {
     if (confirm("Are you sure you want to delete this delivery?")) {
       axios
-        .delete(`http://128.199.19.28:8000/material-delivery/${id}`)
+        .delete(`http://localhost:8000/material-delivery/${id}`)
         .then(() => {
           alert("Delivery deleted!");
           fetchDeliveries(); // Refresh deliveries list after deletion
@@ -265,19 +315,28 @@ const MaterialDeliveryForm: React.FC = () => {
                 <th className="border p-2">Delivery Challan</th>
                 <th className="border p-2">Ref Number</th>
                 <th className="border p-2">Customer Name</th>
+                <th className="border p-2">Site Name</th>
+
                 <th className="border p-2">Vendor Name</th>
                 <th className="border p-2">Serial Number</th>
                 <th className="border p-2">Product</th>
                 <th className="border p-2">MAC Address</th>
                 <th className="border p-2">Actions</th>
+
               </tr>
             </thead>
             <tbody>
-              {deliveryList
+              {currentDeliveries
                 .filter((delivery) => {
                   const lowerSearch = search.toLowerCase();
                   return (
                     delivery.refNumber?.toLowerCase().includes(lowerSearch) ||
+                    delivery.deliveryChallan
+                      ?.toLowerCase()
+                      .includes(lowerSearch) ||
+                    delivery.deliveryType
+                      ?.toLowerCase()
+                      .includes(lowerSearch) ||
                     delivery.customer?.customerName
                       ?.toLowerCase()
                       .includes(lowerSearch) ||
@@ -295,6 +354,9 @@ const MaterialDeliveryForm: React.FC = () => {
                       {delivery.customer?.customerName || "N/A"}
                     </td>
                     <td className="border p-2">
+  {delivery.site?.siteName || "-"}
+</td>
+                    <td className="border p-2">
                       {delivery.vendor?.vendorName || "N/A"}
                     </td>
 
@@ -304,7 +366,7 @@ const MaterialDeliveryForm: React.FC = () => {
                           (item: any, idx: number) =>
                             item.inventory?.serialNumber
                         )
-                        .join(", ") || "-"}
+                        .join(", ") || "N/A"}
                     </td>
 
                     <td className="border p-2">
@@ -312,7 +374,7 @@ const MaterialDeliveryForm: React.FC = () => {
                         ?.map(
                           (item: any, idx: number) => item.product?.productName
                         )
-                        .join(", ") || "-"}
+                        .join(", ") || "N/A"}
                     </td>
 
                     <td className="border p-2">
@@ -320,8 +382,10 @@ const MaterialDeliveryForm: React.FC = () => {
                         ?.map(
                           (item: any, idx: number) => item.inventory?.macAddress
                         )
-                        .join(", ") || "-"}
+                        .join(", ") || "N/A"}
                     </td>
+
+
 
                     <td className="border p-2">
                       <button
@@ -342,6 +406,36 @@ const MaterialDeliveryForm: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        <div className="flex justify-center mt-4 gap-2">
+  <button
+    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+    className="px-3 py-1 border rounded disabled:opacity-50"
+  >
+    Prev
+  </button>
+  {Array.from({ length: totalPages }, (_, i) => (
+    <button
+      key={i + 1}
+      onClick={() => setCurrentPage(i + 1)}
+      className={`px-3 py-1 border rounded ${
+        currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+      }`}
+    >
+      {i + 1}
+    </button>
+  ))}
+  <button
+    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+    disabled={currentPage === totalPages}
+    className="px-3 py-1 border rounded disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
+
+
 
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
@@ -383,6 +477,26 @@ const MaterialDeliveryForm: React.FC = () => {
                     placeholder="Select Customer"
                   />
                 )}
+
+{isSaleOrDemo && (
+  <div className="mb-4">
+    <select
+      name="siteId"
+      value={formData.siteId}
+      onChange={handleChange}
+      className="border p-1.5 w-72 rounded"
+      >
+      <option value="">Select Customers Site</option>
+      {sites.map((site) => (
+        <option key={site.id} value={site.id}>
+          {site.siteName}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+                
 
                 {isPurchaseReturn && (
                   <VendorCombobox

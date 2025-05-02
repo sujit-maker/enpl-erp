@@ -36,7 +36,7 @@ const ProductTable: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/products");
+      const response = await axios.get("http://localhost:8000/products");
       setProducts(response.data.reverse());
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -45,7 +45,7 @@ const ProductTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/category");
+      const response = await axios.get("http://localhost:8000/category");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -54,7 +54,7 @@ const ProductTable: React.FC = () => {
 
   const fetchSubCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/subcategory");
+      const response = await axios.get("http://localhost:8000/subcategory");
       setSubCategories(response.data);
     } catch (error) {
       console.error("Error fetching subcategories:", error);
@@ -73,7 +73,7 @@ const ProductTable: React.FC = () => {
       return;
     }
     try {
-      await axios.delete(`http://128.199.19.28:8000/products/${id}`);
+      await axios.delete(`http://localhost:8000/products/${id}`);
       alert("Product deleted successfully!");
       fetchProducts();
     } catch (error) {

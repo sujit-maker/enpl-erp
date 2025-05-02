@@ -32,7 +32,12 @@
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
  
-
+  const resetDropdowns = () => {
+    setInventoryOpen(false);
+    setServiceOpen(false);
+    setAddressBookOpen(false);
+  };
+  
    // Define menu items
   const menuItems = [
     { title: "Dashboard", url: "/dashboard", icon: BiSolidDashboard },
@@ -43,8 +48,12 @@
   ];
 
   const toggleSidebar = () => {
+    if (isSidebarOpen) {
+      resetDropdowns();
+    }
     setIsSidebarOpen(!isSidebarOpen);
   };
+  
 
   const handleLogout = () => {
     router.push("/");
@@ -75,7 +84,7 @@
       {/* Sidebar */}
             <div
         className={`fixed top-0 left-0 z-40 h-full bg-gray-800 text-white transition-transform duration-300 ${
-          isSidebarOpen ? "w-64" : "w-16"
+          isSidebarOpen ? "w-64" : "w-36"
         } ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:block`}
       >
         {/* Sidebar Header */}
@@ -94,8 +103,6 @@
         className={`fixed top-0 left-0 z-40 h-full bg-gray-800 text-white transition-all duration-300 ${
           isSidebarOpen ? "w-64" : "w-16"
         }`}
-        onMouseEnter={() => !isMobile && setIsSidebarOpen(true)}
-        onMouseLeave={() => !isMobile && setIsSidebarOpen(false)}
       >
         {/* Menu Items */}
         <ul className="mt-28 space-y-2">

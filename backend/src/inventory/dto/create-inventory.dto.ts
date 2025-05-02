@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsDateString } from 'class-validator';
+import { IsInt, IsString, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateInventoryDto {
   @IsInt()
@@ -9,6 +9,14 @@ export class CreateInventoryDto {
 
   @IsString()
   serialNumber: string;
+
+  @IsString()
+  status: string;
+
+  @IsString()
+  @IsOptional()
+  duration?: string;
+
 
   @IsString()
   macAddress: string;

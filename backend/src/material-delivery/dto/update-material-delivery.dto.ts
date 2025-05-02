@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsOptional, IsNotEmpty, IsArray, ValidateNested } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsNotEmpty, IsArray, ValidateNested, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class UpdateMaterialDeliveryItemDto {
@@ -32,6 +32,18 @@ export class UpdateMaterialDeliveryDto {
   @IsString()
   @IsNotEmpty()
   deliveryType?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  duration?: string;
+
+    @IsOptional()
+    @IsNumber()
+  siteId?: number;
 
   @IsOptional()
   @IsString()

@@ -52,7 +52,7 @@ const ServiceTable: React.FC = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/service");
+      const response = await axios.get("http://localhost:8000/service");
       setServices(response.data.reverse());
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -61,7 +61,7 @@ const ServiceTable: React.FC = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/departments");
+      const response = await axios.get("http://localhost:8000/departments");
       setDepartments(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -70,7 +70,7 @@ const ServiceTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/servicecategory");
+      const response = await axios.get("http://localhost:8000/servicecategory");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -116,7 +116,7 @@ const ServiceTable: React.FC = () => {
         serviceCategoryId: +categoryId,         // 🔁 FIXED
         serviceSubCategoryId: +subCategoryId,   // 🔁 FIXED
       };
-            await axios.post("http://128.199.19.28:8000/service", newService);
+            await axios.post("http://localhost:8000/service", newService);
       alert("Service added successfully!");
       setIsCreateModalOpen(false);
       fetchServices();
@@ -133,7 +133,7 @@ const ServiceTable: React.FC = () => {
           serviceCategoryId: +categoryId,
           serviceSubCategoryId: +subCategoryId,
         };
-                await axios.put(`http://128.199.19.28:8000/service/${selectedService.id}`, updatedService);
+                await axios.put(`http://localhost:8000/service/${selectedService.id}`, updatedService);
         alert("Service updated successfully!");
         setIsUpdateModalOpen(false);
         fetchServices();
@@ -146,7 +146,7 @@ const ServiceTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this service?")) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/service/${id}`);
+        await axios.delete(`http://localhost:8000/service/${id}`);
         alert("Service deleted successfully!");
         fetchServices();
       } catch (error) {

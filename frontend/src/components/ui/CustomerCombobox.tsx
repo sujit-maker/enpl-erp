@@ -42,7 +42,7 @@ export function CustomerCombobox({
   React.useEffect(() => {
     async function fetchCustomers() {
       try {
-        const res = await fetch("http://128.199.19.28:8000/customers");
+        const res = await fetch("http://localhost:8000/customers");
         const data = await res.json();
         setCustomers(data);
       } catch (error) {
@@ -74,7 +74,7 @@ export function CustomerCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0 mt-2 border border-gray-300 bg-white shadow-lg rounded-lg">
+      <PopoverContent className="w-[300px] p-0  border border-gray-300 bg-white shadow-lg rounded-lg">
         <Command>
           <CommandInput
             placeholder="Type to search customer..."

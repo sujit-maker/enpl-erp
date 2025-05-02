@@ -44,7 +44,7 @@ export default function MacAddressCombobox({
   React.useEffect(() => {
     async function fetchSerialNumbers() {
       try {
-        const res = await fetch("http://128.199.19.28:8000/inventory");
+        const res = await fetch("http://localhost:8000/inventory");
         const data = await res.json();
         setMacAddress(data);
       } catch (error) {
@@ -79,11 +79,11 @@ export default function MacAddressCombobox({
       <PopoverContent className="w-[300px] p-0 mt-2 border border-gray-300 bg-white shadow-lg rounded-lg">
         <Command>
           <CommandInput
-            placeholder="Type to search serial number..."
+            placeholder="Type to search Mac address..."
             value={input}
             onValueChange={(value) => {
               setInput(value);
-              onInputChange?.(value); // <- Call parent's onInputChange
+              onInputChange?.(value); 
             }}
             className="px-3 py-2 text-sm focus:outline-none"
           />
@@ -103,7 +103,7 @@ export default function MacAddressCombobox({
                     onSelect={() => {
                       onSelect(serial.id);
                       setOpen(false);
-                      setInput(""); // Clear search input after selection
+                      setInput(""); 
                     }}
                     className="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer rounded-md transition-all"
                   >

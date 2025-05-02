@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { getStatusFromDeliveryType } from './dto/status-mapper';
 
 @Injectable()
 export class InventoryService {
@@ -16,6 +17,8 @@ export class InventoryService {
         macAddress: data.macAddress,
         purchaseDate: new Date(data.purchaseDate),
         purchaseInvoice: data.purchaseInvoice,
+        status: data.status,
+        duration: data.duration,
       },
     });
   }
@@ -60,6 +63,30 @@ export class InventoryService {
       },
     });
   }
+
+
+async updateStatusBySerialOrMac(serialNumber: string, macAddress: string, deliveryType: string) {
+  const status = getStatusFromDeliveryType(deliveryType);
+
+  const inventory = await this.prisma.inventory.findFirst({
+    where: {
+      OR: [
+        { serialNumber: serialNumber ?? undefined },
+        { macAddress: macAddress ?? undefined },
+      ],
+    },
+  });
+
+  if (!inventory) {
+    throw new NotFoundException(`No inventory found for Serial: ${serialNumber} or MAC: ${macAddress}`);
+  }
+
+  return this.prisma.inventory.update({
+    where: { id: inventory.id },
+    data: { status },
+  });
+}
+
   
 
   async remove(id: number) {

@@ -84,13 +84,13 @@ const VendorTable: React.FC = () => {
   const [formData, setFormData] = useState<Vendor>(initialFormState);
 
   const fetchVendors = async () => {
-    const response = await axios.get("http://128.199.19.28:8000/vendors");
+    const response = await axios.get("http://localhost:8000/vendors");
     setVendors(response.data);
   };
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/category");
+      const response = await axios.get("http://localhost:8000/category");
       const names = response.data.map((c: any) => c.categoryName);
       setCategories(names);
     } catch (error) {
@@ -152,7 +152,7 @@ const VendorTable: React.FC = () => {
     if (!confirm) return;
   
     try {
-      await axios.delete(`http://128.199.19.28:8000/vendors/${id}`);
+      await axios.delete(`http://localhost:8000/vendors/${id}`);
       alert("Vendor deleted successfully!");
       fetchVendors();
     } catch (err) {
@@ -207,7 +207,7 @@ const VendorTable: React.FC = () => {
   
     try {
       if (formData.id) {
-        await axios.put(`http://128.199.19.28:8000/vendors/${formData.id}`, {
+        await axios.put(`http://localhost:8000/vendors/${formData.id}`, {
           ...formData,
           contacts: validContacts,
           bankDetails: validBanks,
@@ -233,7 +233,7 @@ if (gstPdfFile) {
   payload.append("gstCertificate", gstPdfFile); // 👈 This must match 'gstCertificate' field in your backend FileInterceptor
 }
 
-await axios.post("http://128.199.19.28:8000/vendors", payload, {
+await axios.post("http://localhost:8000/vendors", payload, {
   headers: { "Content-Type": "multipart/form-data" },
 });
 
@@ -299,7 +299,7 @@ await axios.post("http://128.199.19.28:8000/vendors", payload, {
 </td>
 <td className="p-2 border text-blue-900">
   {vendor.gstpdf ? (
-    <a href={`http://128.199.19.28:8000/gst/${vendor.gstpdf}`} target="_blank" rel="noopener noreferrer">
+    <a href={`http://localhost:8000/gst/${vendor.gstpdf}`} target="_blank" rel="noopener noreferrer">
       View PDF
     </a>
   ) : (

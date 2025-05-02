@@ -1,21 +1,26 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMaterialDeliveryDto } from './dto/create-material-delivery.dto';
 import { UpdateMaterialDeliveryDto } from './dto/update-material-delivery.dto';
 import { MaterialDelivery } from '@prisma/client';
+import { InventoryService } from 'src/inventory/inventory.service';
 
 @Injectable()
 export class MaterialDeliveryService {
-  constructor(private prisma: PrismaService) {}
-
-  async create(data: CreateMaterialDeliveryDto): Promise<MaterialDelivery> { 
+  constructor(
+    private prisma: PrismaService,
+    private inventoryService: InventoryService,
+  ) {}
+  
+  async create(data: CreateMaterialDeliveryDto): Promise<MaterialDelivery[]> {
     try {
-      // Validate if materialDeliveryItems are provided and correctly structured
       if (!data.materialDeliveryItems || data.materialDeliveryItems.length === 0) {
         throw new Error("Material delivery items are required.");
       }
   
-      // Get the last delivery challan number
+      const createdDeliveries: MaterialDelivery[] = [];
+  
+      // Generate deliveryChallan ONCE for this entire batch
       const lastEntry = await this.prisma.materialDelivery.findFirst({
         orderBy: { createdAt: 'desc' },
         select: { deliveryChallan: true },
@@ -34,44 +39,47 @@ export class MaterialDeliveryService {
         }
       }
       const paddedNumber = String(nextNumber).padStart(3, '0');
-      const deliveryChallan = `EN-MDN-${paddedNumber}`;
- 
+      const deliveryChallan = `EN-MDN-${paddedNumber}`; // Shared for all items
   
-      // Safely create materialDeliveryItems, ensuring the necessary fields exist
-      const materialDeliveryItems = data.materialDeliveryItems.map((item) => ({
-        inventoryId: item.inventoryId ?? null, // Handle optional inventoryId
-        productId: item.productId,
-        serialNumber: item.serialNumber,
-        macAddress: item.macAddress,
-        productName: item.productName,
-      }));
-  
-      // Create material delivery record along with associated items
-      const created = await this.prisma.materialDelivery.create({
-        data: {
-          deliveryType: data.deliveryType,
-          deliveryChallan: deliveryChallan,
-          refNumber: data.refNumber || "0000",
-          customerId: data.customerId ?? null,
-          vendorId: data.vendorId ?? null,
-          materialDeliveryItems: {
-            create: materialDeliveryItems,
+      for (const item of data.materialDeliveryItems) {
+        const created = await this.prisma.materialDelivery.create({
+          data: {
+            deliveryType: data.deliveryType,
+            deliveryChallan, 
+            siteId: data.siteId ?? null,
+            refNumber: data.refNumber || "null",
+            customerId: data.customerId ?? null,
+            vendorId: data.vendorId ?? null,
+            materialDeliveryItems: {
+              create: {
+                inventoryId: item.inventoryId ?? null,
+                productId: item.productId,
+                serialNumber: item.serialNumber,
+                macAddress: item.macAddress,
+                productName: item.productName,
+              },
+            },
           },
-        },
-        include: {
-          materialDeliveryItems: true,
-        },
-      });
+          include: {
+            materialDeliveryItems: true,
+          },
+        });
   
-      console.log('Created Material Delivery:', created);
-      return created;
+        // Call updateStatusBySerialOrMac to update the inventory status
+        await this.inventoryService.updateStatusBySerialOrMac(item.serialNumber, item.macAddress, data.deliveryType);
   
+        createdDeliveries.push(created);
+      }
+  
+      return createdDeliveries;
     } catch (error) {
-      // Log the error and provide more details if possible
-      console.error('Error creating material delivery:', error.message, error.stack);
-      throw new Error(`Failed to create material delivery: ${error.message}`);
+      console.error('Error creating material deliveries:', error.message);
+      throw new Error(`Failed to create material deliveries: ${error.message}`);
     }
   }
+  
+  
+  
   
   
   
@@ -83,7 +91,7 @@ export class MaterialDeliveryService {
     await this.prisma.materialDeliveryItem.deleteMany({
       where: { materialDeliveryId: id },
     });
-
+  
     // Now update MaterialDelivery and recreate items
     const updated = await this.prisma.materialDelivery.update({
       where: { id },
@@ -116,8 +124,14 @@ export class MaterialDeliveryService {
       },
     });
   
+    // Update inventory status after update
+    for (const item of data.materialDeliveryItems || []) {
+      await this.inventoryService.updateStatusBySerialOrMac(item.serialNumber, item.macAddress, data.deliveryType);
+    }
+  
     return updated;
   }
+  
   
   async findAll() {
     const result = await this.prisma.materialDelivery.findMany({
@@ -128,6 +142,7 @@ export class MaterialDeliveryService {
             product: true,
           },
         },
+        site: true,
         customer: true,
         vendor: true,
       },

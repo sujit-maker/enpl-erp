@@ -35,6 +35,10 @@ export class CreateMaterialDeliveryDto {
 
   @IsOptional()
   @IsNumber()
+siteId?: number;
+
+  @IsOptional()
+  @IsNumber()
   customerId?: number;
 
   @IsOptional()

@@ -13,6 +13,13 @@ export class UpdateInventoryDto {
   @IsString()
   serialNumber?: string;
 
+  @IsString()
+    status: string;
+  
+    @IsString()
+    @IsOptional()
+    duration?: string;
+
   @IsOptional()
   @IsString()
   macAddress?: string;

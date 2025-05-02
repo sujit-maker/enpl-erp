@@ -84,11 +84,15 @@ model MaterialDelivery {
   deliveryChallan String?
   refNumber       String?
 
+  siteId       Int
+
   customerId Int?
   vendorId   Int?
 
   customer Customer? @relation(fields: [customerId], references: [id])
   vendor   Vendor?   @relation(fields: [vendorId], references: [id])
+
+  site       Site       @relation(fields: [siteId], references: [id])
 
   materialDeliveryItems MaterialDeliveryItem[] @relation("MaterialDeliveryToMaterialDeliveryItem") // ✅ ADD NAME
 
@@ -123,6 +127,8 @@ model Inventory {
   vendorId        Int
   purchaseDate    DateTime
   purchaseInvoice String
+  status          String?
+  duration        String?
 
   vendor  Vendor  @relation(fields: [vendorId], references: [id])
   product Product @relation(fields: [productId], references: [id])
@@ -270,6 +276,7 @@ model Site {
   Customer         Customer           @relation(fields: [customerId], references: [id])
   Task             Task[]
   ServiceContracts ServiceContracts[]
+  materialDelivery MaterialDelivery[]
 }
 
 model ServiceContracts {
