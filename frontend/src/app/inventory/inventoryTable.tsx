@@ -55,17 +55,17 @@ const InventoryTable: React.FC = () => {
   }, [inventoryList, searchQuery]);
 
   const fetchInventory = async () => {
-    const res = await axios.get("http://localhost:8000/inventory");
+    const res = await axios.get("http://128.199.19.28:8000/inventory");
     setInventoryList(res.data);
   };
 
   const fetchProducts = async () => {
-    const res = await axios.get("http://localhost:8000/products");
+    const res = await axios.get("http://128.199.19.28:8000/products");
     setProducts(res.data);
   };
 
   const fetchVendors = async () => {
-    const res = await axios.get("http://localhost:8000/vendors");
+    const res = await axios.get("http://128.199.19.28:8000/vendors");
     setVendors(res.data);
   };
 
@@ -79,10 +79,10 @@ const InventoryTable: React.FC = () => {
   const handleSave = async () => {
     try {
       if (formData.id) {
-        await axios.put(`http://localhost:8000/inventory/${formData.id}`, formData);
+        await axios.put(`http://128.199.19.28:8000/inventory/${formData.id}`, formData);
         alert("Inventory updated!");
       } else {
-        await axios.post("http://localhost:8000/inventory", formData);
+        await axios.post("http://128.199.19.28:8000/inventory", formData);
         alert("Inventory created!");
       }
       setFormData(initialFormState);
@@ -96,7 +96,7 @@ const InventoryTable: React.FC = () => {
 
   const handleDelete = async (id?: number) => {
     if (!id || !confirm("Delete this inventory item?")) return;
-    await axios.delete(`http://localhost:8000/inventory/${id}`);
+    await axios.delete(`http://128.199.19.28:8000/inventory/${id}`);
     fetchInventory();
   };
 

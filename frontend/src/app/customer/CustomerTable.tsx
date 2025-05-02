@@ -83,13 +83,13 @@ const CustomerTable: React.FC = () => {
   const [formData, setFormData] = useState<Customer>(initialFormState);
 
   const fetchCustomers = async () => {
-    const res = await axios.get("http://localhost:8000/customers");
+    const res = await axios.get("http://128.199.19.28:8000/customers");
     setCustomers(res.data);
   };
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/category");
+      const response = await axios.get("http://128.199.19.28:8000/category");
       const names = response.data.map((c: any) => c.categoryName);
       setCategories(names);
     } catch (error) {
@@ -161,7 +161,7 @@ const CustomerTable: React.FC = () => {
     if (!confirm) return;
 
     try {
-      await axios.delete(`http://localhost:8000/customers/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/customers/${id}`);
       alert("Vendor deleted successfully!");
       fetchCustomers();
     } catch (err) {
@@ -211,13 +211,13 @@ const CustomerTable: React.FC = () => {
 
     try {
       if (formData.id) {
-        await axios.put(`http://localhost:8000/customers/${formData.id}`, {
+        await axios.put(`http://128.199.19.28:8000/customers/${formData.id}`, {
           ...formData,
           contacts: validContacts,
           bankDetails: validBanks,
         });
       } else {
-        await axios.post("http://localhost:8000/customers", {
+        await axios.post("http://128.199.19.28:8000/customers", {
           ...formData,
           contacts: validContacts,
           bankDetails: validBanks,

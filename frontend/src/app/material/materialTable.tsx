@@ -82,29 +82,29 @@ const MaterialDeliveryForm: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/customers")
+      .get("http://128.199.19.28:8000/customers")
       .then((res) => setCustomers(res.data));
     axios
-      .get("http://localhost:8000/vendors")
+      .get("http://128.199.19.28:8000/vendors")
       .then((res) => setVendors(res.data));
     axios
-      .get("http://localhost:8000/products")
+      .get("http://128.199.19.28:8000/products")
       .then((res) => setProducts(res.data));
     axios
-      .get("http://localhost:8000/inventory")
+      .get("http://128.199.19.28:8000/inventory")
       .then((res) => setInventory(res.data));
     fetchDeliveries(); // Fetch deliveries on component mount
   }, []);
 
   useEffect(() => {
     // Fetching inventory with associated product and vendor data
-    axios.get("http://localhost:8000/inventory").then((res) => {
+    axios.get("http://128.199.19.28:8000/inventory").then((res) => {
       setInventoryList(res.data);
     });
   }, []);
 
   const fetchDeliveries = async () => {
-    const res = await axios.get("http://localhost:8000/material-delivery");
+    const res = await axios.get("http://128.199.19.28:8000/material-delivery");
     setDeliveryList(res.data);
   };
 
@@ -174,12 +174,12 @@ const MaterialDeliveryForm: React.FC = () => {
     try {
       if (isEdit) {
         await axios.put(
-          `http://localhost:8000/material-delivery/${formData.id}`,
+          `http://128.199.19.28:8000/material-delivery/${formData.id}`,
           payload
         );
         alert("Delivery updated!");
       } else {
-        await axios.post("http://localhost:8000/material-delivery", payload);
+        await axios.post("http://128.199.19.28:8000/material-delivery", payload);
         alert("Delivery created!");
       }
   
@@ -226,7 +226,7 @@ const MaterialDeliveryForm: React.FC = () => {
   const handleDelete = (id: any): void => {
     if (confirm("Are you sure you want to delete this delivery?")) {
       axios
-        .delete(`http://localhost:8000/material-delivery/${id}`)
+        .delete(`http://128.199.19.28:8000/material-delivery/${id}`)
         .then(() => {
           alert("Delivery deleted!");
           fetchDeliveries(); // Refresh deliveries list after deletion

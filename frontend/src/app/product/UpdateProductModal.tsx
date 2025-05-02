@@ -29,7 +29,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/category");
+        const response = await axios.get("http://128.199.19.28:8000/category");
 
         setCategories(response.data);
       } catch (error) {
@@ -44,7 +44,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     const fetchProductData = async () => {
       if (productId) {
         try {
-          const response = await axios.get(`http://localhost:8000/products/${productId}`);
+          const response = await axios.get(`http://128.199.19.28:8000/products/${productId}`);
           const productData = response.data;
           setProductName(productData.productName);
           setProductDescription(productData.productDescription);
@@ -92,7 +92,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
         categoryId: parseInt(categoryId, 10),
         subCategoryId: parseInt(subCategoryId, 10),
       };
-      await axios.put(`http://localhost:8000/products/${productId}`, updatedProduct);
+      await axios.put(`http://128.199.19.28:8000/products/${productId}`, updatedProduct);
 
       fetchProducts();
       alert("Product Updated Successfully")

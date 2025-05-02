@@ -44,7 +44,7 @@ export default function SerialNumberCombobox({
   React.useEffect(() => {
     async function fetchSerialNumbers() {
       try {
-        const res = await fetch("http://localhost:8000/inventory");
+        const res = await fetch("http://128.199.19.28:8000/inventory");
         const data = await res.json();
         setSerialNumbers(data);
       } catch (error) {

@@ -29,7 +29,7 @@ const CategoryTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/category");
+      const response = await axios.get("http://128.199.19.28:8000/category");
       setCategories(response.data.reverse());
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -39,7 +39,7 @@ const CategoryTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
-        await axios.delete(`http://localhost:8000/category/${id}`);
+        await axios.delete(`http://128.199.19.28:8000/category/${id}`);
         alert("Category deleted successfully!");
         fetchCategories();
       } catch (error) {
@@ -58,7 +58,7 @@ const CategoryTable: React.FC = () => {
     }
 
     try {
-      await axios.post("http://localhost:8000/category", {
+      await axios.post("http://128.199.19.28:8000/category", {
         categoryName: formData.categoryName,
         subCategories: formData.subCategories,
       });
@@ -74,7 +74,7 @@ const CategoryTable: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-      await axios.put(`http://localhost:8000/category/${selectedCategory.id}`, {
+      await axios.put(`http://128.199.19.28:8000/category/${selectedCategory.id}`, {
         categoryName: formData.categoryName,
         subCategories: formData.subCategories,
       });

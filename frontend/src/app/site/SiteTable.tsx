@@ -50,7 +50,7 @@ const SiteTable: React.FC = () => {
 
   const fetchSites = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/sites");
+      const response = await axios.get("http://128.199.19.28:8000/sites");
       setSites(response.data.reverse());
     } catch (error) {
       console.error("Error fetching sites:", error);
@@ -59,7 +59,7 @@ const SiteTable: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/customers");
+      const response = await axios.get("http://128.199.19.28:8000/customers");
       setCustomers(response.data);
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -114,7 +114,7 @@ const SiteTable: React.FC = () => {
       return;
     }
     try {
-      await axios.post("http://localhost:8000/sites", formData);
+      await axios.post("http://128.199.19.28:8000/sites", formData);
       alert("Site added successfully!");
       setIsCreateModalOpen(false);
       fetchSites();
@@ -126,7 +126,7 @@ const SiteTable: React.FC = () => {
   const handleUpdate = async () => {
     if (selectedSite) {
       try {
-        await axios.put(`http://localhost:8000/sites/${selectedSite.id}`, formData);
+        await axios.put(`http://128.199.19.28:8000/sites/${selectedSite.id}`, formData);
         alert("Site updated successfully!");
         setIsUpdateModalOpen(false);
         fetchSites();
@@ -139,7 +139,7 @@ const SiteTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this site?")) {
       try {
-        await axios.delete(`http://localhost:8000/sites/${id}`);
+        await axios.delete(`http://128.199.19.28:8000/sites/${id}`);
         alert("Site deleted successfully!");
         fetchSites();
       } catch (error) {
