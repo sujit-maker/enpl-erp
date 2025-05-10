@@ -62,9 +62,7 @@ class CustomerBankDetailDto {
 }
 
 export class UpdateCustomerDto {
-  @IsNotEmpty()
-  @IsString()
-  customerId: string;
+ 
 
   @IsNotEmpty()
   @IsString()
@@ -80,11 +78,7 @@ export class UpdateCustomerDto {
 
   @IsNotEmpty()
   @IsString()
-  contactName: string;
-
-  @IsNotEmpty()
-  @IsString()
-  contactNumber: string;
+  gstpdf: string;
 
   @IsNotEmpty()
   @IsEmail()
@@ -97,7 +91,7 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  products?: string[]; // example: ["a", "b", "c"]
+  products?: string[]; 
 
   @IsNotEmpty()
   @IsString()

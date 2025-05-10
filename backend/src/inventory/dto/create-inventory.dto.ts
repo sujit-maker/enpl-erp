@@ -1,29 +1,45 @@
-import { IsInt, IsString, IsDateString, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsOptional, IsArray } from 'class-validator';
 
 export class CreateInventoryDto {
-  @IsInt()
-  productId: number;
-
-  @IsInt()
+  @IsNumber()
   vendorId: number;
 
-  @IsString()
-  serialNumber: string;
-
-  @IsString()
-  status: string;
-
-  @IsString()
-  @IsOptional()
-  duration?: string;
-
-
-  @IsString()
-  macAddress: string;
-
-  @IsDateString()
-  purchaseDate: string;
+  @IsDate()
+  purchaseDate: Date;
 
   @IsString()
   purchaseInvoice: string;
+
+  @IsString()
+  creditTerms: string;
+
+  @IsString()
+  @IsOptional()
+  dueDate: string;
+
+  @IsString()
+  invoiceNetAmount: string;
+
+  @IsString()
+  gstAmount: string;
+
+  @IsString()
+  invoiceGrossAmount: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  duration?: string;
+
+  @IsArray()
+  products: {
+    productId: number;
+    serialNumber: string;
+    macAddress: string;
+    warrantyPeriod: string;
+    purchaseRate: string;
+  }[];
 }

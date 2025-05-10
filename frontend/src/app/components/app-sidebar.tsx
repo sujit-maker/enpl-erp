@@ -214,6 +214,15 @@
                     Service SKU
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="/servicecontract"
+                    className="block px-2 py-1 hover:bg-gray-700 hover:text-white rounded"
+                    aria-label="Service Contracts"
+                  >
+                    Service Contracts
+                  </a>
+                </li>
               </ul>
             )}
           </li>
@@ -274,6 +283,15 @@
                 </li>
                 <li>
                   <a
+                    href="/purchaseInvoice"
+                    className="block px-2 py-1 hover:bg-gray-700 hover:text-white rounded"
+                    aria-label="Purchase Invoice"
+                  >
+                    Purchase Invoice
+                  </a>
+                </li>
+                <li>
+                  <a
                     href="/material"
                     className="block px-2 py-1 hover:bg-gray-700 hover:text-white rounded"
                     aria-label="Material Delivery"
@@ -281,20 +299,20 @@
                     Material Outward
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="/vendorPayment"
+                    className="block px-2 py-1 hover:bg-gray-700 hover:text-white rounded"
+                    aria-label="Material Delivery"
+                  >
+                    Vendors Payment
+                  </a>
+                </li>
               </ul>
             )}
           </li>
 
-          <li>
-            <a
-              href="/servicecontract"
-              className="flex items-center px-4 py-2 hover:bg-gray-700 rounded-lg"
-              aria-label="Service Contract"
-            >
-              <BiServer className="w-6 h-6 hover:text-gray-400" />
-              {isSidebarOpen && <span className="ml-4">Service Contract</span>}
-            </a>
-          </li>
+       
           
 
           {/* Task Management */}

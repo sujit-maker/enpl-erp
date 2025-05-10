@@ -8,6 +8,15 @@ export class UpdateSiteDto {
    @IsNotEmpty()
     @IsString()
     siteAddress: string;
+
+    @IsString()
+  state         :  string
+  @IsString()
+  city          :  string
+  @IsString()
+  gstNo         :  string
+  @IsString()
+ gstpdf         : string
   
     @IsArray()
     @IsString({ each: true }) // Validate each contact name as a string

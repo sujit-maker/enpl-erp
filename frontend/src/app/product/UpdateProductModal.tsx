@@ -17,6 +17,8 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   const [productName, setProductName] = useState<string>("");
   const [productDescription, setProductDescription] = useState<string>("");
   const [HSN, setHSN] = useState<string>("");
+  const [unit, setUnit] = useState<string>("");
+  const [gstRate, setGstRate] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [subCategoryId, setSubCategoryId] = useState<string>("");
   const [categories, setCategories] = useState<
@@ -39,6 +41,12 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    if (categories.length > 0 && categoryId) {
+      fetchSubCategories(categoryId);
+    }
+  }, [categories, categoryId]);
+  
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -49,10 +57,10 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
           setProductName(productData.productName);
           setProductDescription(productData.productDescription);
           setHSN(productData.HSN);
+          setGstRate(productData.gstRate.toString());
+          setUnit(productData.unit.toString());
           setCategoryId(productData.categoryId.toString()); // Convert categoryId to string for select
           setSubCategoryId(productData.subCategoryId.toString()); // Convert subCategoryId to string for select
-          fetchSubCategories(productData.categoryId.toString()); // Fetch subcategories based on categoryId
-
         } catch (error) {
           console.error("Error fetching product data:", error);
         }
@@ -88,7 +96,8 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
         productName,
         productDescription,
         HSN,
-
+        unit,
+        gstRate,
         categoryId: parseInt(categoryId, 10),
         subCategoryId: parseInt(subCategoryId, 10),
       };
@@ -163,6 +172,41 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
             </div>
 
             <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">
+                GST Rate
+              </label>            
+                <input
+                type="text"
+                className="p-3 border border-gray-300 rounded-md mt-1"
+                value={gstRate}
+                onChange={(e) => setGstRate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">
+                Unit
+              </label>             
+              <select
+                className="p-3 border border-gray-300 rounded-md mt-1"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                required
+              >
+                <option value="">Select Unit</option>
+                <option value="Nos">Nos</option>
+                <option value="Box">Box</option>
+                <option value="Pkt">Pkt</option>
+                <option value="Mtrs">Mtrs</option>
+                <option value="Months">Months</option>
+              </select>
+            </div>
+
+           
+
+
+            <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-700">Category</label>
               <select
                 className="p-3 border border-gray-300 rounded-md mt-1"
@@ -189,14 +233,11 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 required
               >
                 <option value="">Select Subcategory</option>
-
-
                 {subCategories.map((subCategory) => (
                   <option key={subCategory.id} value={subCategory.id.toString()}>
                     {subCategory.subCategoryName}
                   </option>
                 ))}
-
               </select>
             </div>
           </div>

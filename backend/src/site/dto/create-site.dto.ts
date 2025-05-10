@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsNotEmpty, IsString, IsEmail, IsArray, IsOptional } from 'class-validator';
 
 export class CreateSiteDto {
@@ -12,6 +13,17 @@ export class CreateSiteDto {
   @IsNotEmpty()
   @IsString()
   siteAddress: string;
+
+  @IsString()
+  state         :  string
+  @IsString()
+  city          :  string
+  @IsString()
+  gstNo         :  string
+  @IsOptional()
+  @IsString()
+  gstpdf?: string;
+  
 
   @IsArray()
   @IsString({ each: true }) // Validate each contact name as a string
@@ -29,5 +41,6 @@ export class CreateSiteDto {
   emailId: string[];
 
   @IsNotEmpty()
-  customerId: number; 
+  @Type(() => Number)
+  customerId: number;
 }

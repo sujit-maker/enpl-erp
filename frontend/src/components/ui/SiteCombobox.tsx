@@ -40,7 +40,7 @@ export default function SiteCombobox({
   const [input, setInput] = React.useState("");
 
   React.useEffect(() => {
-    async function fetchProducts() {
+    async function fetchSites() {
       try {
         const res = await fetch("http://localhost:8000/sites");
         const data = await res.json();
@@ -49,7 +49,7 @@ export default function SiteCombobox({
         console.error("Failed to fetch sites:", error);
       }
     }
-    fetchProducts();
+    fetchSites();
   }, []);
 
   const selectedLabel = sites.find((p) => p.id === selectedValue)?.siteName;

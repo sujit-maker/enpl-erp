@@ -1,4 +1,11 @@
-import { IsArray, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class MaterialDeliveryItemDto {
@@ -14,9 +21,6 @@ export class MaterialDeliveryItemDto {
 
   @IsString()
   macAddress: string;
-
-  @IsString()
-  productName: string;
 }
 
 export enum DeliveryType {
@@ -24,17 +28,27 @@ export enum DeliveryType {
   Vendor = 'Vendor',
 }
 
-
 export class CreateMaterialDeliveryDto {
   @IsEnum(DeliveryType)
-  deliveryType: DeliveryType; 
+  deliveryType: DeliveryType;
 
   @IsOptional()
   @IsString()
   refNumber?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsString()
+  salesOrderNo?: string;
+  @IsOptional()
+  @IsString()
+  quotationNo?: string;
+  @IsOptional()
+  @IsString()
+  purchaseInvoiceNo?: string;
+
+  @IsOptional()
+@IsNumber()
+@Type(() => Number) // <-- Needed to transform string to number
 siteId?: number;
 
   @IsOptional()

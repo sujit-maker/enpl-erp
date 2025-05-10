@@ -34,32 +34,46 @@ type Props = {
 export default function MacAddressCombobox({
   selectedValue,
   onSelect,
-  placeholder = "Search mac address number...",
+  placeholder = "Search MAC address...",
   onInputChange,
 }: Props) {
   const [open, setOpen] = React.useState(false);
-  const [MacAddress, setMacAddress] = React.useState<MacAddress[]>([]);
+  const [macAddressList, setMacAddressList] = React.useState<MacAddress[]>([]);
   const [input, setInput] = React.useState("");
 
   React.useEffect(() => {
-    async function fetchSerialNumbers() {
+    async function fetchMacAddressNumbers() {
       try {
         const res = await fetch("http://localhost:8000/inventory");
         const data = await res.json();
-        setMacAddress(data);
+
+        console.log("Fetched inventory data:", data); // Debug fetch
+
+        const flattened: MacAddress[] = data.flatMap((inv: any) =>
+          Array.isArray(inv.products)
+            ? inv.products.map((p: any) => ({
+                id: p.id,
+                macAddress: p.macAddress,
+              }))
+            : []
+        );
+
+        console.log("Flattened MAC address list:", flattened); // Debug flattening
+        setMacAddressList(flattened);
       } catch (error) {
-        console.error("Failed to fetch serial numbers:", error);
+        console.error("Failed to fetch MAC addresses:", error);
       }
     }
-    fetchSerialNumbers();
+
+    fetchMacAddressNumbers();
   }, []);
 
-  const selectedLabel = MacAddress.find((p) => p.id === selectedValue)?.macAddress;
+  const selectedLabel = macAddressList.find((p) => p.id === selectedValue)?.macAddress;
 
-  const filteredSerialNumbers =
+  const filteredMacAddressNumbers =
     input.length > 0
-      ? MacAddress.filter((p) =>
-          p.macAddress.toLowerCase().includes(input.toLowerCase())
+      ? macAddressList.filter((p) =>
+          p.macAddress?.toLowerCase().includes(input.toLowerCase()) // Optional chaining here
         )
       : [];
 
@@ -79,7 +93,7 @@ export default function MacAddressCombobox({
       <PopoverContent className="w-[300px] p-0 mt-2 border border-gray-300 bg-white shadow-lg rounded-lg">
         <Command>
           <CommandInput
-            placeholder="Type to search Mac address..."
+            placeholder="Type to search MAC address..."
             value={input}
             onValueChange={(value) => {
               setInput(value);
@@ -92,28 +106,28 @@ export default function MacAddressCombobox({
               <div className="p-3 text-sm text-gray-500">
                 Start typing to see suggestions...
               </div>
-            ) : filteredSerialNumbers.length === 0 ? (
-              <CommandEmpty>No serial numbers found.</CommandEmpty>
+            ) : filteredMacAddressNumbers.length === 0 ? (
+              <CommandEmpty>No MAC addresses found.</CommandEmpty>
             ) : (
               <CommandGroup>
-                {filteredSerialNumbers.map((serial) => (
+                {filteredMacAddressNumbers.map((macAddress) => (
                   <CommandItem
-                    key={serial.id}
-                    value={serial.macAddress}
+                    key={macAddress.id}
+                    value={macAddress.macAddress}
                     onSelect={() => {
-                      onSelect(serial.id);
+                      onSelect(macAddress.id);
                       setOpen(false);
-                      setInput(""); 
+                      setInput(""); // Clear search input after selection
                     }}
                     className="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer rounded-md transition-all"
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4 text-green-500",
-                        selectedValue === serial.id ? "opacity-100" : "opacity-0"
+                        selectedValue === macAddress.id ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    <span className="font-medium">{serial.macAddress}</span>
+                    <span className="font-medium">{macAddress.macAddress}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -7,9 +7,8 @@ import { UpdateSiteDto } from './dto/update-site.dto';
 export class SiteService {
   constructor(private prisma: PrismaService) {}
 
-  // Create a Site
- // Create a Site with auto-incrementing siteCode
-async create(createSiteDto: CreateSiteDto) {
+  // Create a Site with auto-incrementing siteCode
+async create(createSiteDto: CreateSiteDto, customerId: number) {
   // Get the last site created to get the highest current siteCode
   const lastSite = await this.prisma.site.findFirst({
     orderBy: {
@@ -27,21 +26,32 @@ async create(createSiteDto: CreateSiteDto) {
     nextSiteNumber = parseInt(lastNumber, 10) + 1; // Increment the number
   }
 
-  // Format the next siteCode (e.g., "EN-CAS-001")
-  const nextsiteCode = `EN-CAS-${String(nextSiteNumber).padStart(3, '0')}`;
+  // Format the next siteCode (e.g., "ENPL-CUS-MMYY-001")
+  const nextsiteCode = `ENPL-CUS-MMYY-${String(nextSiteNumber).padStart(3, '0')}`; // Updated format
 
   // Create the site with the newly generated siteCode
   return this.prisma.site.create({
     data: {
-      siteCode: nextsiteCode, // Use the generated siteCode
+      siteCode: nextsiteCode,
       siteName: createSiteDto.siteName,
       siteAddress: createSiteDto.siteAddress,
-      contactName: createSiteDto.contactName, // Pass as an array of contact names
-      contactNumber: createSiteDto.contactNumber, // Pass as an array of contact numbers
-      emailId: createSiteDto.emailId, // Pass as an array of emails
-      customerId: Number(createSiteDto.customerId), // Ensure customerId is a number
+      contactName: createSiteDto.contactName,
+      contactNumber: createSiteDto.contactNumber,
+      emailId: createSiteDto.emailId,
+      state: createSiteDto.state,
+      city: createSiteDto.city,
+      gstNo: createSiteDto.gstNo,
+      gstpdf: createSiteDto.gstpdf,
+      Customer: {
+        connect: {
+          id: Number(customerId) // safely convert string to number
+        }
+      }
+      
+      
     },
   });
+  
 }
 
   

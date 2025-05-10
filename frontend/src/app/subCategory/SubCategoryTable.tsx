@@ -5,29 +5,37 @@ import axios from "axios";
 interface SubCategory {
   id: number;
   subCategoryName: string;
+  subCategoryId: string;
   categoryId: number;
   category: Category;
 }
 
 interface Category {
   id: number;
+  categoryId: string;
   categoryName: string;
 }
 
 const SubCategoryTable: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setselectedCategoryId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     categoryId: 0, // Initially empty
     subCategoryName: "",
+    subCategorySuffix: "", // Added for suffix inpu
+    subCategoryId: "",
   });
-  const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] =
+    useState<SubCategory | null>(null);
 
-    // Pagination States
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
 
   // ✅ Fetch categories for the dropdown
   const fetchCategories = async () => {
@@ -44,18 +52,21 @@ const SubCategoryTable: React.FC = () => {
     try {
       const response = await axios.get("http://localhost:8000/subcategory");
       const filteredSubCategories = response.data.filter(
-        (subCategory: SubCategory) => subCategory.category?.categoryName && subCategory.subCategoryName
+        (subCategory: SubCategory) =>
+          subCategory.category?.categoryName && subCategory.subCategoryName
       );
       setSubCategories(filteredSubCategories);
     } catch (error) {
       console.error("Error fetching subcategories:", error);
     }
   };
-  
+
   const handleDelete = async (subCategoryId: number) => {
     if (window.confirm("Are you sure you want to delete this subcategory?")) {
       try {
-        await axios.delete(`http://localhost:8000/subcategory/${subCategoryId}`);
+        await axios.delete(
+          `http://localhost:8000/subcategory/${subCategoryId}`
+        );
         alert("Subcategory deleted successfully!");
         fetchSubCategories(); // Re-fetch subcategories to update the table
       } catch (error) {
@@ -65,56 +76,76 @@ const SubCategoryTable: React.FC = () => {
     }
   };
 
-  // ✅ Create or Update a subcategory
+  //  Create or Update a subcategory
+  // Open Create Modal
+  const openCreateModal = () => {
+    setFormData({
+      categoryId: 0,
+      subCategoryName: "",
+      subCategoryId: "",
+      subCategorySuffix: "",
+    });
+    setIsCreateModalOpen(true);
+  };
+
+  // Open Update Modal with selected subcategory details
+  const openUpdateModal = (subCategory: SubCategory) => {
+    setSelectedSubCategory(subCategory);
+    setFormData({
+      categoryId: subCategory.category.id,
+      subCategoryName: subCategory.subCategoryName,
+      subCategoryId: subCategory.subCategoryId,
+      subCategorySuffix: subCategory.subCategoryId.split("-")[1] || "", // Extract suffix from subCategoryId
+    });
+    setIsUpdateModalOpen(true);
+  };
+
+  // ✅ Corrected handleSubmit function for creating or updating subcategories
   const handleSubmit = async () => {
-    const { categoryId, subCategoryName } = formData;
+    const { categoryId, subCategoryName, subCategorySuffix } = formData;
 
     if (!categoryId || !subCategoryName) {
       alert("Please select a category and enter a subcategory name.");
       return;
     }
 
+    const selectedCategory = categories.find((c) => c.id === categoryId);
+    const categoryCode = selectedCategory?.categoryId || "";
+    const newSubCategoryId = `${categoryCode}-${subCategorySuffix}`;
     try {
       if (selectedSubCategory) {
         // Updating existing subcategory
-        await axios.put(`http://localhost:8000/subcategory/${selectedSubCategory.id}`, {
-          categoryId,
-          subCategoryName,
-        });
+        await axios.put(
+          `http://localhost:8000/subcategory/${selectedSubCategory.id}`,
+          {
+            categoryId,
+            subCategoryName,
+          }
+        );
         alert("Subcategory updated successfully!");
       } else {
         // Creating new subcategory
         await axios.post("http://localhost:8000/subcategory", {
           categoryId,
           subCategoryName,
+          subCategoryId: newSubCategoryId,
         });
         alert("Subcategory created successfully!");
       }
 
-      fetchSubCategories(); // Refresh table after updating/creating
+      fetchSubCategories();
       setIsCreateModalOpen(false);
       setIsUpdateModalOpen(false);
-      setFormData({ categoryId: 0, subCategoryName: "" });
+      setFormData({
+        categoryId: 0,
+        subCategoryName: "",
+        subCategoryId: "",
+        subCategorySuffix: "",
+      });
     } catch (error) {
       console.error("Error handling subcategory:", error);
       alert("Failed to create or update subcategory.");
     }
-  };
-
-  // ✅ Open Create Modal
-  const openCreateModal = () => {
-    setFormData({ categoryId: 0, subCategoryName: "" });
-    setIsCreateModalOpen(true);
-  };
-
-  // ✅ Open Update Modal with selected subcategory details
-  const openUpdateModal = (subCategory: SubCategory) => {
-    setSelectedSubCategory(subCategory);
-    setFormData({
-      categoryId: subCategory.category.id,
-      subCategoryName: subCategory.subCategoryName,
-    });
-    setIsUpdateModalOpen(true);
   };
 
   // ✅ Fetch data when component mounts
@@ -123,12 +154,25 @@ const SubCategoryTable: React.FC = () => {
     fetchSubCategories();
   }, []);
 
-    // Pagination logic
-    const indexOfLastUser = currentPage * itemsPerPage;
-    const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-    const currentSubcategories = subCategories.slice(indexOfFirstUser, indexOfLastUser);
-  
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  // Pagination logic
+  const filteredCategories = subCategories.filter(
+    (subCategory) =>
+      subCategory.subCategoryName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      subCategory.category.categoryName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+  );
+
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentSubcategories = filteredCategories.slice(
+    indexOfFirstUser,
+    indexOfLastUser
+  );
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div className="flex h-screen mt-3">
@@ -138,25 +182,39 @@ const SubCategoryTable: React.FC = () => {
             onClick={openCreateModal}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            Add Subcategory
+            Add Product Subcategory
           </button>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 rounded mb-4 w-full md:w-1/3"
+          />
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
           <table className="min-w-[500px] w-full text-center border-collapse border border-gray-200">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">Id</th>
+                <th className="border border-gray-300 p-2">Sub Category Id</th>
                 <th className="border border-gray-300 p-2">Category Name</th>
-                <th className="border border-gray-300 p-2">Sub Category Name</th>
+                <th className="border border-gray-300 p-2">
+                  Sub Category Name
+                </th>
                 <th className="border border-gray-300 p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentSubcategories.length > 0 ? (
                 currentSubcategories.map((subCategory) => (
-                  <tr key={subCategory.id} className="hover:bg-gray-100">
-                    <td className="border border-gray-300 p-2">{subCategory.id}</td>
+                  <tr
+                    key={subCategory.subCategoryId}
+                    className="hover:bg-gray-100"
+                  >
+                    <td className="border border-gray-300 p-2">
+                      {subCategory.subCategoryId}
+                    </td>
                     <td className="border border-gray-300 p-2">
                       {subCategory.category.categoryName}
                     </td>
@@ -189,6 +247,7 @@ const SubCategoryTable: React.FC = () => {
             </tbody>
           </table>
         </div>
+
         <div className="flex justify-center mt-4">
           <button
             onClick={() => paginate(currentPage - 1)}
@@ -198,21 +257,28 @@ const SubCategoryTable: React.FC = () => {
             Previous
           </button>
           {/* Page Numbers */}
-          {[...Array(Math.ceil(subCategories.length / itemsPerPage))].map((_, index) => (
-            <button
-              key={index}
-              onClick={() => paginate(index + 1)}
-              className={`mx-1 px-4 py-2 rounded ${
-                currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-700"
-              } hover:bg-blue-400`}
-            >
-              {index + 1}
-            </button>
-          ))}
+          {[...Array(Math.ceil(filteredCategories.length / itemsPerPage))].map(
+            (_, index) => (
+              <button
+                key={index}
+                onClick={() => paginate(index + 1)}
+                className={`mx-1 px-4 py-2 rounded ${
+                  currentPage === index + 1
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-300 text-gray-700"
+                } hover:bg-blue-400`}
+              >
+                {index + 1}
+              </button>
+            )
+          )}
           <button
             onClick={() => paginate(currentPage + 1)}
             className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
-            disabled={currentPage === Math.ceil(subCategories.length / itemsPerPage)}
+            disabled={
+              currentPage ===
+              Math.ceil(filteredCategories.length / itemsPerPage)
+            }
           >
             Next
           </button>
@@ -226,31 +292,114 @@ const SubCategoryTable: React.FC = () => {
             <h2 className="text-lg font-semibold mb-4">
               {isUpdateModalOpen ? "Edit Subcategory" : "Add Subcategory"}
             </h2>
-            <select
-              value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: parseInt(e.target.value) })}
-              className="border p-2 rounded mb-2 w-full"
-            >
-              <option value="">Select Category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.categoryName}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={formData.subCategoryName}
-              onChange={(e) => setFormData({ ...formData, subCategoryName: e.target.value })}
-              placeholder="Subcategory Name"
-              className="border p-2 rounded mb-2 w-full"
-            />
+
+            <div className="space-y-4 max-w-md mx-auto p-4 bg-white rounded shadow">
+              {/* Category Select */}
+              <div>
+                <label className="block mb-1 font-semibold text-gray-700">
+                  Category
+                </label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => {
+                    const selectedCategoryId = parseInt(e.target.value);
+                    const selectedCategory = categories.find(
+                      (c) => c.id === selectedCategoryId
+                    );
+                    const categoryCode = selectedCategory?.categoryId || "";
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      categoryId: selectedCategoryId,
+                      subCategorySuffix: "",
+                      subCategoryId: "",
+                    }));
+                  }}
+                  className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.categoryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Subcategory Code (Suffix) */}
+              <div>
+                <label className="block mb-1 font-semibold text-gray-700">
+Manual SubCategory Id 
+               </label>
+                <input
+                  type="text"
+                  placeholder=""
+                  value={formData.subCategorySuffix || ""}
+                  onChange={(e) => {
+                    const suffix = e.target.value.trim().toUpperCase();
+                    const selectedCategory = categories.find(
+                      (c) => c.id === formData.categoryId
+                    );
+                    const categoryCode = selectedCategory?.categoryId || "";
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      subCategorySuffix: suffix,
+                      subCategoryId:
+                        categoryCode && suffix
+                          ? `${categoryCode}-${suffix}`
+                          : "",
+                    }));
+                  }}
+                  className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Read-only Subcategory ID */}
+              <div>
+                <label className="block mb-1 font-semibold text-gray-700">
+                  Generated Subcategory ID
+                </label>
+                <input
+                  type="text"
+                  value={formData.subCategoryId || ""}
+                  readOnly
+                  className="w-full border p-2 rounded bg-gray-100 text-gray-600"
+                  placeholder="Auto-generated ID"
+                />
+              </div>
+
+              {/* Subcategory Name (Manual Input) */}
+              <div>
+                <label className="block mb-1 font-semibold text-gray-700">
+                  Subcategory Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter Subcategory Name"
+                  value={formData.subCategoryName || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      subCategoryName: e.target.value,
+                    }))
+                  }
+                  className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
             <div className="mt-4">
               <button
                 onClick={handleSubmit}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
               >
-                {isUpdateModalOpen ? "Update Subcategory" : "Create Subcategory"}
+                {isUpdateModalOpen
+                  ? "Update Subcategory"
+                  : "Create Subcategory"}
               </button>
               <button
                 onClick={() => {

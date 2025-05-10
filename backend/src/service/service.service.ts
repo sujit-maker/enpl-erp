@@ -10,6 +10,7 @@ export class ServiceService {
   // ✅ Create a new Service
   async createService(createServiceDto: CreateServiceDto) {
     const {
+      serviceSkuId,
       serviceName,
       serviceDescription,
       SAC,
@@ -20,6 +21,7 @@ export class ServiceService {
   
     return this.prisma.service.create({
       data: {
+        serviceSkuId,
         serviceName,
         serviceDescription,
         SAC,
@@ -57,11 +59,12 @@ export class ServiceService {
 
   // ✅ Update a Service by ID
   async updateService(id: number, updateServiceDto: UpdateServiceDto) {
-    const { serviceName, serviceDescription, SAC, departmentId, serviceCategoryId, serviceSubCategoryId } = updateServiceDto;
+    const { serviceSkuId, serviceName, serviceDescription, SAC, departmentId, serviceCategoryId, serviceSubCategoryId } = updateServiceDto;
 
     return this.prisma.service.update({
       where: { id },
       data: {
+        serviceSkuId,
         serviceName,
         serviceDescription,
         SAC,

@@ -21,9 +21,8 @@ interface Site {
 interface Customer {
   id: number;
   customerName: string;
-  Sites: Site[]; 
+  Sites: Site[];
 }
-
 
 interface Product {
   id: number;
@@ -44,8 +43,11 @@ interface FormData {
   id?: number;
   deliveryType: string;
   refNumber?: string;
+  salesOrderNo?: string;
+  quotationNo?: string;
+  purchaseInvoiceNo?: string;
   customerId?: number;
-  siteId?: number;
+  siteId?: number | undefined;
   productId?: number;
   inventoryId?: number;
   vendorId?: number;
@@ -60,17 +62,18 @@ interface DeliveryItem {
   vendorId?: number;
   customerId?: number;
   siteId?: number;
-
 }
 
 const initialFormData: FormData = {
   deliveryType: "",
   refNumber: "",
+  salesOrderNo: "",
+  quotationNo: "",
+  purchaseInvoiceNo: "",
   customerId: 0,
-  siteId: 0,  
+  siteId: 0,
   vendorId: 0,
   productId: 0,
-  
 };
 
 const MaterialDeliveryForm: React.FC = () => {
@@ -88,13 +91,15 @@ const MaterialDeliveryForm: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-const [itemsPerPage] = useState(10); // Change as needed
+  const [itemsPerPage] = useState(10); // Change as needed
 
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-const currentDeliveries = deliveryList.slice(indexOfFirstItem, indexOfLastItem);
-const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
-
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDeliveries = deliveryList.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
 
   const isSaleOrDemo =
     formData.deliveryType === "Sale" || formData.deliveryType === "Demo";
@@ -117,9 +122,24 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
   }, []);
 
   useEffect(() => {
-    // Fetching inventory with associated product and vendor data
     axios.get("http://localhost:8000/inventory").then((res) => {
-      setInventoryList(res.data);
+      console.log("Raw inventory response:", res.data); // ✅ log raw response
+
+      const flattened = res.data.flatMap((inv: any) =>
+        (inv.products || []).map((prod: any) => ({
+          id: prod.id,
+          serialNumber: prod.serialNumber,
+          macAddress: prod.macAddress,
+          productId: prod.productId,
+          product: prod.product,
+          vendorId: inv.vendorId,
+        }))
+      );
+
+      console.log("Flattened inventory:", flattened); // ✅ log flattened structure
+
+      setInventory(flattened);
+      setInventoryList(flattened);
     });
   }, []);
 
@@ -127,16 +147,17 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
     const res = await axios.get("http://localhost:8000/material-delivery");
     setDeliveryList(res.data);
   };
-  
+
   useEffect(() => {
-    const selectedCustomer = customers.find(c => c.id === formData.customerId);
+    const selectedCustomer = customers.find(
+      (c) => c.id === formData.customerId
+    );
     if (selectedCustomer) {
       setSites(selectedCustomer.Sites || []);
     } else {
       setSites([]);
     }
   }, [formData.customerId, customers]);
-  
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -146,11 +167,19 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "customerId" || name === "vendorId" ? parseInt(value) : value,
+        name === "customerId" || name === "vendorId"
+          ? parseInt(value)
+          : name === "siteId" && value === ""
+          ? undefined
+          : value, // Allow undefined siteId
     }));
   };
 
-  const handleItemChange = (index: number, field: keyof DeliveryItem, value: string) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof DeliveryItem,
+    value: string
+  ) => {
     const updatedItems = [...items];
     (updatedItems[index][field] as string) = value;
 
@@ -167,7 +196,8 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
         updatedItems[index].inventoryId = found.id;
         updatedItems[index].serialNumber = found.serialNumber;
         updatedItems[index].macAddress = found.macAddress;
-        updatedItems[index].productName = found.product?.productName || "Unknown";
+        updatedItems[index].productName =
+          found.product?.productName || "Unknown";
         updatedItems[index].vendorId = found.vendorId;
         updatedItems[index].customerId = formData.customerId || 0; // Set customerId from formData
         updatedItems[index].siteId = formData.siteId || 0; // Set siteId from formData
@@ -184,10 +214,9 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
   };
-  
+
   const handleSave = async () => {
     const isEdit = !!formData.id;
-  
 
     if (!formData.deliveryType) {
       alert("Please select a delivery type");
@@ -201,12 +230,12 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
       alert("Vendor is required for Purchase Return");
       return;
     }
-    
+
     // Map items array to include required fields
     const payload = {
       ...formData,
       customerId: isSaleOrDemo ? formData.customerId : undefined,
-      siteId: formData.siteId ? parseInt(formData.siteId.toString()) : undefined,
+      siteId: formData.siteId ? formData.siteId : undefined, // Optional siteId
       vendorId: isPurchaseReturn ? formData.vendorId : undefined,
       materialDeliveryItems: items // Ensure this field includes all required item data
         .filter((item) => item.inventoryId) // Ensure items with inventoryId are included
@@ -218,8 +247,7 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
           productName: item.productName || "Unknown", // Default value for missing productName
         })),
     };
-  
-  
+
     try {
       if (isEdit) {
         await axios.put(
@@ -231,7 +259,7 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
         await axios.post("http://localhost:8000/material-delivery", payload);
         alert("Delivery created!");
       }
-  
+
       // Reset form and table after successful submission
       setFormData(initialFormData);
       setItems([{ serialNumber: "", macAddress: "", productId: 0 }]);
@@ -242,7 +270,6 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
       alert("Error saving delivery");
     }
   };
-  
 
   const openModal = (delivery?: any) => {
     if (delivery) {
@@ -259,12 +286,15 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
         id: delivery.id,
         deliveryType: delivery.deliveryType,
         refNumber: delivery.refNumber,
+        salesOrderNo: delivery.salesOrderNo,
+        quotationNo: delivery.quotationNo,
+        purchaseInvoiceNo: delivery.purchaseInvoiceNo,
         customerId: delivery.customerId || 0,
         siteId: delivery.siteId || 0,
         vendorId: delivery.vendorId || 0,
       });
 
-      setItems(enrichedItems); 
+      setItems(enrichedItems);
     } else {
       setFormData(initialFormData);
       setItems([{ serialNumber: "", macAddress: "", productId: 0 }]); // Reset the items if creating new
@@ -313,6 +343,9 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
               <tr>
                 <th className="border p-2">Delivery Type</th>
                 <th className="border p-2">Delivery Challan</th>
+                <th className="border p-2">Sales Order No</th>
+                <th className="border p-2">Quotation No</th>
+                <th className="border p-2">Purchase Invoice No</th>
                 <th className="border p-2">Ref Number</th>
                 <th className="border p-2">Customer Name</th>
                 <th className="border p-2">Site Name</th>
@@ -322,7 +355,6 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
                 <th className="border p-2">Product</th>
                 <th className="border p-2">MAC Address</th>
                 <th className="border p-2">Actions</th>
-
               </tr>
             </thead>
             <tbody>
@@ -331,8 +363,20 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
                   const lowerSearch = search.toLowerCase();
                   return (
                     delivery.refNumber?.toLowerCase().includes(lowerSearch) ||
+                    delivery.salesOrderNo
+                      ?.toLowerCase()
+                      .includes(lowerSearch) ||
+                    delivery.quotationNo?.toLowerCase().includes(lowerSearch) ||
+                    delivery.purchaseInvoiceNo
+                      ?.toLowerCase()
+                      .includes(lowerSearch) ||
                     delivery.deliveryChallan
                       ?.toLowerCase()
+                      .includes(lowerSearch) ||
+                    delivery.materialDeliveryItems
+                      ?.map((item: any) => item.inventory?.serialNumber)
+                      .join(", ")
+                      .toLowerCase()
                       .includes(lowerSearch) ||
                     delivery.deliveryType
                       ?.toLowerCase()
@@ -349,23 +393,24 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
                   <tr key={delivery.id}>
                     <td className="border p-2">{delivery.deliveryType}</td>
                     <td className="border p-2">{delivery.deliveryChallan}</td>
+                    <td className="border p-2">{delivery.salesOrderNo}</td>
+                    <td className="border p-2">{delivery.quotationNo}</td>
+                    <td className="border p-2">{delivery.purchaseInvoiceNo}</td>
                     <td className="border p-2">{delivery.refNumber}</td>
+
                     <td className="border p-2">
                       {delivery.customer?.customerName || "N/A"}
                     </td>
                     <td className="border p-2">
-  {delivery.site?.siteName || "-"}
-</td>
+                      {delivery.site?.siteName || "N/A"}
+                    </td>
                     <td className="border p-2">
                       {delivery.vendor?.vendorName || "N/A"}
                     </td>
 
                     <td className="border p-2">
                       {delivery.materialDeliveryItems
-                        ?.map(
-                          (item: any, idx: number) =>
-                            item.inventory?.serialNumber
-                        )
+                        ?.map((item: any, idx: number) => item.serialNumber)
                         .join(", ") || "N/A"}
                     </td>
 
@@ -379,13 +424,9 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
 
                     <td className="border p-2">
                       {delivery.materialDeliveryItems
-                        ?.map(
-                          (item: any, idx: number) => item.inventory?.macAddress
-                        )
+                        ?.map((item: any, idx: number) => item.macAddress)
                         .join(", ") || "N/A"}
                     </td>
-
-
 
                     <td className="border p-2">
                       <button
@@ -408,34 +449,34 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
         </div>
 
         <div className="flex justify-center mt-4 gap-2">
-  <button
-    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-    disabled={currentPage === 1}
-    className="px-3 py-1 border rounded disabled:opacity-50"
-  >
-    Prev
-  </button>
-  {Array.from({ length: totalPages }, (_, i) => (
-    <button
-      key={i + 1}
-      onClick={() => setCurrentPage(i + 1)}
-      className={`px-3 py-1 border rounded ${
-        currentPage === i + 1 ? "bg-blue-600 text-white" : ""
-      }`}
-    >
-      {i + 1}
-    </button>
-  ))}
-  <button
-    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-    disabled={currentPage === totalPages}
-    className="px-3 py-1 border rounded disabled:opacity-50"
-  >
-    Next
-  </button>
-</div>
-
-
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
 
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
@@ -478,25 +519,25 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
                   />
                 )}
 
-{isSaleOrDemo && (
-  <div className="mb-4">
-    <select
-      name="siteId"
-      value={formData.siteId}
-      onChange={handleChange}
-      className="border p-1.5 w-72 rounded"
-      >
-      <option value="">Select Customers Site</option>
-      {sites.map((site) => (
-        <option key={site.id} value={site.id}>
-          {site.siteName}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
-
-                
+                {isSaleOrDemo && (
+                  <div className="mb-4">
+                    <select
+                      name="siteId"
+                      value={formData.siteId ?? ""}
+                      onChange={handleChange}
+                      className="border p-1.5 w-72 rounded"
+                    >
+                      <option value="">
+                        Select Customer's Site (Optional)
+                      </option>
+                      {sites.map((site) => (
+                        <option key={site.id} value={site.id}>
+                          {site.siteName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {isPurchaseReturn && (
                   <VendorCombobox
@@ -509,89 +550,138 @@ const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
                 )}
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <input
+                  type="text"
+                  name="salesOrderNo"
+                  placeholder="Sales Order No"
+                  value={formData.salesOrderNo || ""}
+                  onChange={handleChange}
+                  readOnly={formData.deliveryType !== "Sale"}
+                  className={`border p-2 rounded ${
+                    formData.deliveryType !== "Sale"
+                      ? "bg-gray-100 text-gray-500"
+                      : ""
+                  }`}
+                />
+
+                <input
+                  type="text"
+                  name="quotationNo"
+                  placeholder="Quotation No"
+                  value={formData.quotationNo || ""}
+                  onChange={handleChange}
+                  readOnly={formData.deliveryType !== "Demo"}
+                  className={`border p-2 rounded ${
+                    formData.deliveryType !== "Demo"
+                      ? "bg-gray-100 text-gray-500"
+                      : ""
+                  }`}
+                />
+
+                <input
+                  type="text"
+                  name="purchaseInvoiceNo"
+                  placeholder="Purchase Invoice No"
+                  value={formData.purchaseInvoiceNo || ""}
+                  onChange={handleChange}
+                  readOnly={formData.deliveryType !== "Purchase Return"}
+                  className={`border p-2 rounded ${
+                    formData.deliveryType !== "Purchase Return"
+                      ? "bg-gray-100 text-gray-500"
+                      : ""
+                  }`}
+                />
+              </div>
+
               {/* Items Section */}
               <div className="mt-6 space-y-4">
-  {items.map((item, index) => (
-    <div key={index} className="flex flex-wrap gap-4 items-center">
-      <div className="flex-1 min-w-[200px]">
-        <SerialCombobox
-          selectedValue={item.inventoryId || 0}
-          onSelect={(value) => {
-            const selectedInventory = inventoryList.find(
-              (inv) => inv.id === value
-            );
-            if (selectedInventory) {
-              const updatedItems = [...items];
-              updatedItems[index] = {
-                serialNumber: selectedInventory.serialNumber,
-                macAddress: selectedInventory.macAddress,
-                productId: selectedInventory.productId,
-                inventoryId: selectedInventory.id,
-              };
-              setItems(updatedItems);
-            }
-          }}
-          onInputChange={(value) =>
-            handleItemChange(index, "serialNumber", value)
-          }
-          placeholder="Select Serial Number"
-        />
-      </div>
+                {items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-wrap gap-4 items-center"
+                  >
+                    <div className="flex-1 min-w-[200px]">
+                      <SerialCombobox
+                        selectedValue={item.inventoryId || 0}
+                        onSelect={(value) => {
+                          const selectedInventory = inventoryList.find(
+                            (inv) => inv.id === value
+                          );
+                          if (selectedInventory) {
+                            const updatedItems = [...items];
+                            updatedItems[index] = {
+                              serialNumber: selectedInventory.serialNumber,
+                              macAddress: selectedInventory.macAddress,
+                              productId: selectedInventory.productId,
+                              inventoryId: selectedInventory.id,
+                            };
+                            setItems(updatedItems);
+                          }
+                        }}
+                        onInputChange={(value) =>
+                          handleItemChange(index, "serialNumber", value)
+                        }
+                        placeholder="Select Serial Number"
+                      />
+                    </div>
 
-      <MacAddressCombobox
-        selectedValue={
-          inventoryList.find((inv) => inv.macAddress === item.macAddress)?.id ||
-          0
-        }
-        onSelect={(value) => {
-          const selectedInventory = inventoryList.find(
-            (inv) => inv.id === value
-          );
-          if (selectedInventory) {
-            const updated = [...items];
-            updated[index] = {
-              ...updated[index],
-              macAddress: selectedInventory.macAddress,
-              serialNumber: selectedInventory.serialNumber,
-              productId: selectedInventory.productId,
-              inventoryId: selectedInventory.id,
-            };
-            setItems(updated);
-          }
-        }}
-        onInputChange={(value) =>
-          handleItemChange(index, "macAddress", value)
-        }
-        placeholder="Select MAC Address"
-      />
+                    <MacAddressCombobox
+                      selectedValue={
+                        inventoryList.find(
+                          (inv) => inv.macAddress === item.macAddress
+                        )?.id || 0
+                      }
+                      onSelect={(value) => {
+                        const selectedInventory = inventoryList.find(
+                          (inv) => inv.id === value
+                        );
+                        if (selectedInventory) {
+                          const updated = [...items];
+                          updated[index] = {
+                            ...updated[index],
+                            macAddress: selectedInventory.macAddress,
+                            serialNumber: selectedInventory.serialNumber,
+                            productId: selectedInventory.productId,
+                            inventoryId: selectedInventory.id,
+                          };
+                          setItems(updated);
+                        }
+                      }}
+                      onInputChange={(value) =>
+                        handleItemChange(index, "macAddress", value)
+                      }
+                      placeholder="Select MAC Address"
+                    />
 
-      <input
-        type="text"
-        readOnly
-        value={
-          products.find((p) => p.id === item.productId)?.productName || ""
-        }
-        placeholder="Product Name"
-        className="border p-2 rounded bg-gray-100 text-gray-800 flex-1 min-w-[250px]"
-      />
+                    <input
+                      type="text"
+                      readOnly
+                      value={
+                        products.find((p) => p.id === item.productId)
+                          ?.productName || ""
+                      }
+                      placeholder="Product Name"
+                      className="border p-2 rounded bg-gray-100 text-gray-800 flex-1 min-w-[250px]"
+                    />
 
-      <button
-        onClick={addItem}
-        className="text-green-600 font-bold text-2xl px-2"
-      >
-        +
-      </button>
-      {items.length > 1 && (
-        <button
-          onClick={() => removeItem(index)}
-          className="text-red-600 font-bold text-2xl px-2"
-        >
-          −
-        </button>
-      )}
-    </div>
-  ))}
-</div>
+                    <button
+                      onClick={addItem}
+                      className="text-green-600 font-bold text-2xl px-2"
+                    >
+                      +
+                    </button>
+                    {items.length > 1 && (
+                      <button
+                        onClick={() => removeItem(index)}
+                        className="text-red-600 font-bold text-2xl px-2"
+                      >
+                        −
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
 
               {/* Action Buttons */}
               <div className="mt-6 flex justify-end gap-2">

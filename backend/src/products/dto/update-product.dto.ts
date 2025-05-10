@@ -17,6 +17,14 @@ export class UpdateProductDto {
   @IsString()
   HSN?: string;
 
+  @IsString()
+  @IsOptional()
+  unit: string;
+
+  @IsString()
+  @IsOptional()
+  gstRate: string;
+
   @IsOptional()
   @IsInt()
   categoryId?: number;

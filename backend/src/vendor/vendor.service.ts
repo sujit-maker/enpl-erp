@@ -28,7 +28,7 @@ export class VendorService {
     });
   
     // Generate vendorCode from the auto-incremented ID
-    const vendorCode = `EN-VD-${String(createdVendor.id).padStart(3, '0')}`;
+    const vendorCode = `ENPL-VND-${String(createdVendor.id).padStart(3, '0')}`;
   
     // Update vendor with the generated vendorCode
     const updatedVendor = await this.prisma.vendor.update({
@@ -106,8 +106,13 @@ export class VendorService {
 
   // Delete Vendor (cascades will handle nested records)
   async remove(id: number) {
+    await this.prisma.inventory.deleteMany({
+      where: { vendorId: id },
+    });
+  
     return this.prisma.vendor.delete({
       where: { id },
     });
   }
+  
 }

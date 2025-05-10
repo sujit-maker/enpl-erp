@@ -18,10 +18,6 @@ class UpdateMaterialDeliveryItemDto {
   @IsNotEmpty()
   macAddress: string;
 
-  @IsString()
-  @IsNotEmpty()
-  productName: string;
-
   @IsOptional()
   id?: number; // optional if updating existing items
 }
@@ -44,6 +40,17 @@ export class UpdateMaterialDeliveryDto {
     @IsOptional()
     @IsNumber()
   siteId?: number;
+
+
+   @IsOptional()
+  @IsString()
+  salesOrderNo?: string;
+  @IsOptional()
+  @IsString()
+  quotationNo?: string;
+  @IsOptional()
+  @IsString()
+  purchaseInvoiceNo?: string;
 
   @IsOptional()
   @IsString()

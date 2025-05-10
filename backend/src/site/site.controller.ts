@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, BadRequestException, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { SiteService } from './site.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('sites')
 export class SiteController {
@@ -9,9 +12,46 @@ export class SiteController {
 
   // Create a new site
   @Post()
-  async create(@Body() createSiteDto: CreateSiteDto) {
-    return this.siteService.create(createSiteDto);
+  @UseInterceptors(
+    FileInterceptor('gstpdf', {
+      storage: diskStorage({
+        destination: './uploads/gst-certificates',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype !== 'application/pdf') {
+          return cb(new Error('Only PDF files are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async create(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+  ) {
+    try {
+      if (file) {
+        body.gstpdf = file.filename;
+      }
+  
+      const customerId = Number(body.customerId);
+      if (isNaN(customerId)) {
+        throw new BadRequestException('Invalid or missing customerId');
+      }
+  
+      return this.siteService.create(body, customerId);
+    } catch (error) {
+      console.error('Error creating site:', error);
+      throw new BadRequestException('Invalid site data');
+    }
   }
+  
+
 
    // Get sites by customer ID
    @Get('customer/:customerId')

@@ -75,13 +75,14 @@ export class UpdateVendorDto {
   @IsString()
   gstNo?: string;
 
-  @IsOptional()
   @IsString()
-  contactName?: string;
+  businessType: string;
 
-  @IsOptional()
   @IsString()
-  contactNumber?: string;
+  state: string;
+
+  @IsString()
+  city: string;
 
   @IsOptional()
   @IsEmail()

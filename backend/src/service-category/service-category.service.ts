@@ -10,13 +10,14 @@ export class ServiceCategoryService {
 
   
   async createCategory(createCategoryDto: CreateCategoryDto) {
-    const { categoryName, subCategories } = createCategoryDto;
+    const {  serviceCatId, categoryName, subCategories } = createCategoryDto;
   
     return this.prisma.serviceCategory.create({
       data: {
+        serviceCatId,
         categoryName,
         subCategories: {
-          create: subCategories, // Create multiple subcategories
+          create: subCategories, // Create subcategories based on the provided data
         },
       },
       include: {
@@ -53,11 +54,12 @@ export class ServiceCategoryService {
 
   
   async updateCategory(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const { categoryName, subCategories } = updateCategoryDto;
+    const { serviceCatId, categoryName, subCategories } = updateCategoryDto;
   
     return this.prisma.serviceCategory.update({
       where: { id },
       data: {
+        serviceCatId,
         categoryName,
         subCategories: {
           deleteMany: {}, // Remove all existing subcategories

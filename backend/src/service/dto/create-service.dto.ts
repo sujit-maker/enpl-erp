@@ -1,6 +1,11 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateServiceDto {
+
+  @IsNotEmpty()
+  @IsString()
+  serviceSkuId: string;
+
   @IsNotEmpty()
   @IsString()
   serviceName: string;
@@ -13,9 +18,9 @@ export class CreateServiceDto {
   @IsString()
   SAC: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
-  departmentId: number;
+  departmentId?: number;
 
   @IsNotEmpty()
   @IsInt()

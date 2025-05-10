@@ -1,18 +1,13 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-interface Department {
-  id: number;
-  departmentName: string;
-}
-
 interface Service {
   id: number;
+  serviceSkuId: string;
   serviceName: string;
   serviceDescription: string;
   SAC: string;
-  departmentId: number;
   categoryId: number;
   subCategoryId: number;
 }
@@ -25,28 +20,32 @@ interface Category {
 
 const ServiceTable: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subCategories, setSubCategories] = useState<{ id: number; subCategoryName: string }[]>([]);
+  const [subCategories, setSubCategories] = useState<
+    { id: number; subCategoryName: string }[]
+  >([]);
   const [categoryId, setCategoryId] = useState<string>("");
   const [subCategoryId, setSubCategoryId] = useState<string>("");
   const [formData, setFormData] = useState({
+    serviceSkuId: "",
     serviceName: "",
     serviceDescription: "",
     SAC: "",
-    departmentId: 0,
+    serviceCategoryId: 0,
+    serviceSubCategoryId: 0,
   });
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-    // Pagination States
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     fetchServices();
-    fetchDepartments();
     fetchCategories();
   }, []);
 
@@ -56,15 +55,6 @@ const ServiceTable: React.FC = () => {
       setServices(response.data.reverse());
     } catch (error) {
       console.error("Error fetching services:", error);
-    }
-  };
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await axios.get("http://localhost:8000/departments");
-      setDepartments(response.data);
-    } catch (error) {
-      console.error("Error fetching departments:", error);
     }
   };
 
@@ -86,13 +76,12 @@ const ServiceTable: React.FC = () => {
       : [];
     setSubCategories(validSubCategories);
   };
-  
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCategoryId = e.target.value;
     setCategoryId(selectedCategoryId);
     fetchSubCategories(selectedCategoryId);
-    setSubCategoryId(""); 
+    setSubCategoryId("");
   };
 
   const handleSubCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -105,7 +94,7 @@ const ServiceTable: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: name === "departmentId" ? +value : value, 
+      [name]: value,
     }));
   };
 
@@ -113,10 +102,10 @@ const ServiceTable: React.FC = () => {
     try {
       const newService = {
         ...formData,
-        serviceCategoryId: +categoryId,         // 🔁 FIXED
-        serviceSubCategoryId: +subCategoryId,   // 🔁 FIXED
+        serviceCategoryId: +categoryId, // 🔁 FIXED
+        serviceSubCategoryId: +subCategoryId, // 🔁 FIXED
       };
-            await axios.post("http://localhost:8000/service", newService);
+      await axios.post("http://localhost:8000/service", newService);
       alert("Service added successfully!");
       setIsCreateModalOpen(false);
       fetchServices();
@@ -124,7 +113,7 @@ const ServiceTable: React.FC = () => {
       console.error("Error adding service:", error);
     }
   };
-    
+
   const handleUpdate = async () => {
     if (selectedService) {
       try {
@@ -133,7 +122,10 @@ const ServiceTable: React.FC = () => {
           serviceCategoryId: +categoryId,
           serviceSubCategoryId: +subCategoryId,
         };
-                await axios.put(`http://localhost:8000/service/${selectedService.id}`, updatedService);
+        await axios.put(
+          `http://localhost:8000/service/${selectedService.id}`,
+          updatedService
+        );
         alert("Service updated successfully!");
         setIsUpdateModalOpen(false);
         fetchServices();
@@ -142,7 +134,7 @@ const ServiceTable: React.FC = () => {
       }
     }
   };
-  
+
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this service?")) {
       try {
@@ -154,58 +146,131 @@ const ServiceTable: React.FC = () => {
       }
     }
   };
+
+  // Pagination logic
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const filteredServices = services.filter((service) =>
+    service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    service.serviceSkuId.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
-    // Pagination logic
-    const indexOfLastUser = currentPage * itemsPerPage;
-    const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-    const currentServices = services.slice(indexOfFirstUser, indexOfLastUser);
+  const sortedServices = [...filteredServices].sort((a, b) => {
+    if (!sortConfig) return 0;
+    const { key, direction } = sortConfig;
   
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+    const aVal = a[key as keyof typeof a];
+    const bVal = b[key as keyof typeof b];
+  
+    if (typeof aVal === "string" && typeof bVal === "string") {
+      return direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    }
+  
+    if (typeof aVal === "number" && typeof bVal === "number") {
+      return direction === "asc" ? aVal - bVal : bVal - aVal;
+    }
+  
+    return 0;
+  });
+  
+  const currentServices = sortedServices.slice(indexOfFirstUser, indexOfLastUser);
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-<div className="flex h-screen mt-12">
-      <div className="flex-1 p-6 overflow-auto lg:ml-72 "> 
+    <div className="flex h-screen mt-20">
+      <div className="flex-1 p-6 overflow-auto lg:ml-72 ">
         <div className="flex justify-between items-center mb-5">
           <button
             onClick={() => {
-              setFormData({ serviceName: "", serviceDescription: "", SAC: "", departmentId: 0 });
+              setFormData({
+                serviceSkuId: "",
+                serviceName: "",
+                serviceDescription: "",
+                SAC: "",
+                serviceCategoryId: 0,
+                serviceSubCategoryId: 0,
+              });
               setIsCreateModalOpen(true);
             }}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             Add Service
           </button>
+          <input
+            type="text"
+            placeholder="Search services..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border px-3 py-2 rounded w-64"
+          />
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-        <table className="min-w-[1100px] w-full text-center border-collapse border border-gray-200">
+          <table className="min-w-[1100px] w-full text-center border-collapse border border-gray-200">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border border-gray-300 px-4 py-2">Service</th>
-                <th className="border border-gray-300 px-4 py-2">Description</th>
+              <th
+  onClick={() =>
+    setSortConfig((prev) =>
+      prev?.key === "serviceSkuId"
+        ? { key: "serviceSkuId", direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key: "serviceSkuId", direction: "asc" }
+    )
+  }
+  className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+>
+  SKU ID ⬍
+</th>
+                <th
+  onClick={() =>
+    setSortConfig((prev) =>
+      prev?.key === "serviceName"
+        ? { key: "serviceName", direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key: "serviceName", direction: "asc" }
+    )
+  }
+  className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+>
+  Service Name ⬍
+</th>
+                <th className="border border-gray-300 px-4 py-2">
+                  Description
+                </th>
+
+
                 <th className="border border-gray-300 px-4 py-2">SAC</th>
-                <th className="border border-gray-300 px-4 py-2">Department</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {currentServices.map((service) => (
                 <tr key={service.id} className="hover:bg-gray-100">
-                  <td className="border border-gray-300 px-4 py-2">{service.serviceName}</td>
-                  <td className="border border-gray-300 px-4 py-2">{service.serviceDescription}</td>
-                  <td className="border border-gray-300 px-4 py-2">{service.SAC}</td>
                   <td className="border border-gray-300 px-4 py-2">
-                    {departments.find((dept) => dept.id === service.departmentId)?.departmentName || "N/A"}
+                    {service.serviceSkuId}
                   </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {service.serviceName}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {service.serviceDescription}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {service.SAC}
+                  </td>
+
                   <td className="border border-gray-300 px-4 py-2 text-center">
                     <button
                       onClick={() => {
                         setSelectedService(service);
                         setFormData({
+                          serviceSkuId: service.serviceSkuId,
                           serviceName: service.serviceName,
                           serviceDescription: service.serviceDescription,
                           SAC: service.SAC,
-                          departmentId: service.departmentId,
+                          serviceCategoryId: service.categoryId || 0,
+                          serviceSubCategoryId: service.subCategoryId || 0,
                         });
                         setCategoryId(service.categoryId.toString());
                         setSubCategoryId(service.subCategoryId.toString());
@@ -227,6 +292,7 @@ const ServiceTable: React.FC = () => {
             </tbody>
           </table>
         </div>
+
         <div className="flex justify-center mt-4">
           <button
             onClick={() => paginate(currentPage - 1)}
@@ -235,18 +301,23 @@ const ServiceTable: React.FC = () => {
           >
             Previous
           </button>
+
           {/* Page Numbers */}
-          {[...Array(Math.ceil(services.length / itemsPerPage))].map((_, index) => (
-            <button
-              key={index}
-              onClick={() => paginate(index + 1)}
-              className={`mx-1 px-4 py-2 rounded ${
-                currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-700"
-              } hover:bg-blue-400`}
-            >
-              {index + 1}
-            </button>
-          ))}
+          {[...Array(Math.ceil(filteredServices.length / itemsPerPage))].map(
+            (_, index) => (
+              <button
+                key={index}
+                onClick={() => paginate(index + 1)}
+                className={`mx-1 px-4 py-2 rounded ${
+                  currentPage === index + 1
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-300 text-gray-700"
+                } hover:bg-blue-400`}
+              >
+                {index + 1}
+              </button>
+            )
+          )}
           <button
             onClick={() => paginate(currentPage + 1)}
             className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
@@ -261,7 +332,6 @@ const ServiceTable: React.FC = () => {
         <Modal
           title="Add Service"
           formData={formData}
-          departments={departments}
           categories={categories}
           subCategories={subCategories}
           categoryId={categoryId}
@@ -278,7 +348,6 @@ const ServiceTable: React.FC = () => {
         <Modal
           title="Update Service"
           formData={formData}
-          departments={departments}
           categories={categories}
           subCategories={subCategories}
           categoryId={categoryId}
@@ -297,13 +366,14 @@ const ServiceTable: React.FC = () => {
 const Modal: React.FC<{
   title: string;
   formData: any;
-  departments: Department[];
   categories: Category[];
 
   subCategories: { id: number; subCategoryName: string }[];
   categoryId: string;
   subCategoryId: string;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   onCategoryChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onSubCategoryChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onSave: () => void;
@@ -311,7 +381,6 @@ const Modal: React.FC<{
 }> = ({
   title,
   formData,
-  departments,
   categories,
   subCategories,
   categoryId,
@@ -326,39 +395,12 @@ const Modal: React.FC<{
     <div className="bg-white p-6 rounded-lg w-96">
       <h2 className="text-xl font-bold mb-4">{title}</h2>
       <input
-        name="serviceName"
-        value={formData.serviceName}
+        name="serviceSkuId"
+        value={formData.serviceSkuId}
         onChange={onInputChange}
-        placeholder="Service Name"
+        placeholder="Service SKU ID"
         className="w-full mb-3 p-2 border rounded"
       />
-      <input
-        name="serviceDescription"
-        value={formData.serviceDescription}
-        onChange={onInputChange}
-        placeholder="Description"
-        className="w-full mb-3 p-2 border rounded"
-      />
-      <input
-        name="SAC"
-        value={formData.SAC}
-        onChange={onInputChange}
-        placeholder="SAC"
-        className="w-full mb-3 p-2 border rounded"
-      />
-      <select
-        name="departmentId"
-        value={formData.departmentId}
-        onChange={onInputChange}
-        className="w-full mb-3 p-2 border rounded"
-      >
-        <option value={0}>Select Department</option>
-        {departments.map((department) => (
-          <option key={department.id} value={department.id}>
-            {department.departmentName}
-          </option>
-        ))}
-      </select>
 
       <select
         value={categoryId}
@@ -388,8 +430,33 @@ const Modal: React.FC<{
         ))}
       </select>
 
+      <input
+        name="serviceName"
+        value={formData.serviceName}
+        onChange={onInputChange}
+        placeholder="Service Name"
+        className="w-full mb-3 p-2 border rounded"
+      />
+      <input
+        name="serviceDescription"
+        value={formData.serviceDescription}
+        onChange={onInputChange}
+        placeholder="Description"
+        className="w-full mb-3 p-2 border rounded"
+      />
+      <input
+        name="SAC"
+        value={formData.SAC}
+        onChange={onInputChange}
+        placeholder="SAC"
+        className="w-full mb-3 p-2 border rounded"
+      />
+
       <div className="flex justify-end space-x-2">
-        <button onClick={onSave} className="bg-blue-500 text-white px-4 py-2 rounded">
+        <button
+          onClick={onSave}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
           Save
         </button>
         <button

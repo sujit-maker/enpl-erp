@@ -12,76 +12,85 @@ export class MaterialDeliveryService {
     private inventoryService: InventoryService,
   ) {}
   
+  
   async create(data: CreateMaterialDeliveryDto): Promise<MaterialDelivery[]> {
-    try {
-      if (!data.materialDeliveryItems || data.materialDeliveryItems.length === 0) {
-        throw new Error("Material delivery items are required.");
-      }
-  
-      const createdDeliveries: MaterialDelivery[] = [];
-  
-      // Generate deliveryChallan ONCE for this entire batch
-      const lastEntry = await this.prisma.materialDelivery.findFirst({
-        orderBy: { createdAt: 'desc' },
-        select: { deliveryChallan: true },
-        where: {
-          deliveryChallan: {
-            startsWith: 'EN-MDN-',
-          },
-        },
+  try {
+    if (!data.materialDeliveryItems || data.materialDeliveryItems.length === 0) {
+      throw new Error("Material delivery items are required.");
+    }
+
+    const createdDeliveries: MaterialDelivery[] = [];
+
+    // Generate deliveryChallan
+    const lastEntry = await this.prisma.materialDelivery.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { deliveryChallan: true },
+      where: { deliveryChallan: { startsWith: 'EN-MDN-' } },
+    });
+
+    let nextNumber = 1;
+    if (lastEntry?.deliveryChallan) {
+      const lastNumber = parseInt(lastEntry.deliveryChallan.split('EN-MDN-')[1]);
+      if (!isNaN(lastNumber)) nextNumber = lastNumber + 1;
+    }
+
+    const paddedNumber = String(nextNumber).padStart(3, '0');
+    const deliveryChallan = `EN-MDN-${paddedNumber}`;
+
+    for (const item of data.materialDeliveryItems) {
+      // ✅ Fetch ProductInventory to get correct Inventory ID
+      const productInventory = await this.prisma.productInventory.findUnique({
+        where: { id: item.inventoryId },
       });
-  
-      let nextNumber = 1;
-      if (lastEntry?.deliveryChallan) {
-        const lastNumber = parseInt(lastEntry.deliveryChallan.split('EN-MDN-')[1]);
-        if (!isNaN(lastNumber)) {
-          nextNumber = lastNumber + 1;
-        }
+
+      if (!productInventory) {
+        throw new Error(`ProductInventory with ID ${item.inventoryId} does not exist.`);
       }
-      const paddedNumber = String(nextNumber).padStart(3, '0');
-      const deliveryChallan = `EN-MDN-${paddedNumber}`; // Shared for all items
-  
-      for (const item of data.materialDeliveryItems) {
-        const created = await this.prisma.materialDelivery.create({
-          data: {
-            deliveryType: data.deliveryType,
-            deliveryChallan, 
-            siteId: data.siteId ?? null,
-            refNumber: data.refNumber || "null",
-            customerId: data.customerId ?? null,
-            vendorId: data.vendorId ?? null,
-            materialDeliveryItems: {
-              create: {
-                inventoryId: item.inventoryId ?? null,
-                productId: item.productId,
-                serialNumber: item.serialNumber,
-                macAddress: item.macAddress,
-                productName: item.productName,
-              },
+
+      const created = await this.prisma.materialDelivery.create({
+        data: {
+          deliveryType: data.deliveryType,
+          deliveryChallan,
+          refNumber: data.refNumber || "N/A",
+          salesOrderNo: data.salesOrderNo || "N/A",
+          quotationNo: data.quotationNo || "N/A",
+          purchaseInvoiceNo: data.purchaseInvoiceNo || "N/A",
+        siteId: data.siteId ? Number(data.siteId) : null,
+customerId: data.customerId ? Number(data.customerId) : null,
+vendorId: data.vendorId ? Number(data.vendorId) : null,
+
+          materialDeliveryItems: {
+            create: {
+              inventoryId: productInventory.inventoryId, // ✅ Use actual Inventory ID
+              productId: item.productId,
+              serialNumber: item.serialNumber,
+              macAddress: item.macAddress,
             },
           },
-          include: {
-            materialDeliveryItems: true,
-          },
-        });
-  
-        // Call updateStatusBySerialOrMac to update the inventory status
-        await this.inventoryService.updateStatusBySerialOrMac(item.serialNumber, item.macAddress, data.deliveryType);
-  
-        createdDeliveries.push(created);
-      }
-  
-      return createdDeliveries;
-    } catch (error) {
-      console.error('Error creating material deliveries:', error.message);
-      throw new Error(`Failed to create material deliveries: ${error.message}`);
+        },
+        include: {
+          materialDeliveryItems: true,
+        },
+      });
+
+      await this.inventoryService.updateStatusBySerialOrMac(
+        item.serialNumber,
+        item.macAddress,
+        data.deliveryType
+      );
+
+      createdDeliveries.push(created);
     }
+
+    return createdDeliveries;
+  } catch (error) {
+    console.error('Error creating material deliveries:', error.message);
+    throw new Error(`Failed to create material deliveries: ${error.message}`);
   }
+}
+
   
-  
-  
-  
-  
+
   
   async update(id: number, data: UpdateMaterialDeliveryDto) {
     const delivery = await this.prisma.materialDelivery.findUnique({ where: { id } });
@@ -98,6 +107,9 @@ export class MaterialDeliveryService {
       data: {
         deliveryType: data.deliveryType,
         refNumber: data.refNumber,
+        salesOrderNo: data.salesOrderNo,
+        quotationNo: data.quotationNo,
+        purchaseInvoiceNo: data.purchaseInvoiceNo,
         deliveryChallan: data.deliveryChallan ?? undefined,
         customerId: data.customerId ? Number(data.customerId) : null,
         vendorId: data.vendorId ? Number(data.vendorId) : null,
@@ -107,7 +119,6 @@ export class MaterialDeliveryService {
             productId: item.productId,
             serialNumber: item.serialNumber,
             macAddress: item.macAddress,
-            productName: item.productName,
           })) ?? [],
         },
         updatedAt: new Date(),

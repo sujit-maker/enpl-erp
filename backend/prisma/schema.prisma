@@ -22,7 +22,7 @@ model Users {
   userType      String
   firstName     String
   lastName      String
-  contactNumber String  
+  contactNumber String
   emailId       String       @unique
   hodId         Int?
   managerId     Int?
@@ -35,6 +35,7 @@ model Users {
 model Category {
   id            Int           @id @default(autoincrement())
   categoryName  String
+  categoryId    String?
   subCategories SubCategory[] @relation("CategoryToSubCategory")
   products      Product[]
 }
@@ -42,6 +43,7 @@ model Category {
 model SubCategory {
   id              Int       @id @default(autoincrement())
   subCategoryName String
+  subCategoryId   String
   categoryId      Int
   category        Category  @relation(name: "CategoryToSubCategory", fields: [categoryId], references: [id], onDelete: Cascade)
   products        Product[]
@@ -49,6 +51,7 @@ model SubCategory {
 
 model ServiceCategory {
   id            Int                  @id @default(autoincrement())
+  serviceCatId  String?              @unique
   categoryName  String
   subCategories ServiceSubCategory[] @relation("ServiceCategoryToServiceSubCategory")
   services      Service[]
@@ -56,6 +59,7 @@ model ServiceCategory {
 
 model ServiceSubCategory {
   id                Int             @id @default(autoincrement())
+  serviceSubCatId   String?         @unique
   subCategoryName   String
   serviceCategoryId Int
   category          ServiceCategory @relation(name: "ServiceCategoryToServiceSubCategory", fields: [serviceCategoryId], references: [id], onDelete: Cascade)
@@ -63,36 +67,42 @@ model ServiceSubCategory {
 }
 
 model Product {
-  id                    Int                    @id @default(autoincrement())
-  productId             String                 @unique
-  productName           String
-  productDescription    String
-  HSN                   String
-  categoryId            Int
-  subCategoryId         Int
-  category              Category               @relation(fields: [categoryId], references: [id])
-  subCategory           SubCategory            @relation(fields: [subCategoryId], references: [id])
-  inventory             Inventory[]
-  materialDeliveryItems MaterialDeliveryItem[]
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime?              @updatedAt
+  id                 Int                  @id @default(autoincrement())
+  productId          String               @unique
+  productName        String
+  productDescription String
+  HSN                String
+  unit               String
+  gstRate            String
+  categoryId         Int
+  subCategoryId      Int
+
+  category           Category             @relation(fields: [categoryId], references: [id])
+  subCategory        SubCategory          @relation(fields: [subCategoryId], references: [id])
+  productInventories ProductInventory[]   // ✅ Join table entries
+  materialDeliveryItem  MaterialDeliveryItem[] // ✅ Link to material delivery items
+
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime?            @updatedAt
 }
+
 
 model MaterialDelivery {
   id              Int     @id @default(autoincrement())
   deliveryType    String
   deliveryChallan String?
   refNumber       String?
-
-  siteId       Int
-
-  customerId Int?
-  vendorId   Int?
+  salesOrderNo   String?
+  quotationNo    String?
+  purchaseInvoiceNo String?
+  siteId          Int?
+  customerId      Int?
+  vendorId        Int?
 
   customer Customer? @relation(fields: [customerId], references: [id])
   vendor   Vendor?   @relation(fields: [vendorId], references: [id])
 
-  site       Site       @relation(fields: [siteId], references: [id])
+  site Site? @relation(fields: [siteId], references: [id])
 
   materialDeliveryItems MaterialDeliveryItem[] @relation("MaterialDeliveryToMaterialDeliveryItem") // ✅ ADD NAME
 
@@ -106,81 +116,99 @@ model MaterialDeliveryItem {
   inventoryId        Int?
   productId          Int
 
-  serialNumber    String  
-  macAddress  String  
-  productName String  
+  serialNumber String
+  macAddress   String
 
   materialDelivery MaterialDelivery @relation(name: "MaterialDeliveryToMaterialDeliveryItem", fields: [materialDeliveryId], references: [id])
   inventory        Inventory?       @relation(fields: [inventoryId], references: [id])
-  product          Product           @relation(fields: [productId], references: [id])
+  product          Product          @relation(fields: [productId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model Inventory {   
+  id                 Int                  @id @default(autoincrement())
+  vendorId           Int
+  purchaseDate       DateTime
+  purchaseInvoice    String
+  creditTerms        String
+  dueDate            String
+  invoiceNetAmount   String
+  gstAmount          String
+  invoiceGrossAmount String
+  status             String?
 
-model Inventory {
-  id              Int      @id @default(autoincrement())
+  vendor             Vendor               @relation(fields: [vendorId], references: [id])
+  products           ProductInventory[]   // ✅ Link to product inventory items
+  materialDeliveryItem  MaterialDeliveryItem[] // ✅ Link to material delivery items
+  vendorPayment    VendorPayment[]      // ✅ Link to vendor payments
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+
+model ProductInventory {
+  id              Int       @id @default(autoincrement())
+  inventoryId     Int
   productId       Int
   serialNumber    String
   macAddress      String
-  vendorId        Int
-  purchaseDate    DateTime
-  purchaseInvoice String
-  status          String?
-  duration        String?
+  warrantyPeriod  String
+  purchaseRate    String
 
-  vendor  Vendor  @relation(fields: [vendorId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  inventory       Inventory  @relation(fields: [inventoryId], references: [id])
+  product         Product    @relation(fields: [productId], references: [id])
 
-  materialDeliveryItems MaterialDeliveryItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
-// Define the Service model
+
+
 model Service {
   id                   Int                @id @default(autoincrement())
+  serviceSkuId         String?            @unique
   serviceName          String
   serviceDescription   String
   SAC                  String
-  departmentId         Int
+  departmentId         Int?
   serviceCategoryId    Int
   serviceSubCategoryId Int
   serviceCategory      ServiceCategory    @relation(fields: [serviceCategoryId], references: [id])
   serviceSubCategory   ServiceSubCategory @relation(fields: [serviceSubCategoryId], references: [id])
-  Department           Department         @relation(fields: [departmentId], references: [id])
+  Department           Department?        @relation(fields: [departmentId], references: [id])
   Task                 Task[]
 }
 
 // Define the Vendor model
 model Vendor {
-  id              Int     @id @default(autoincrement())
-  vendorCode      String? @unique
+  id              Int      @id @default(autoincrement())
+  vendorCode      String?  @unique
   vendorName      String
   registerAddress String
-  gstNo           String  @unique
-  contactName     String
-  contactNumber   String
-  emailId         String  @unique
-
-  website     String?
-  products    Json?
-  creditTerms String
-  creditLimit String
-  remark      String
-  gstpdf      String?
-  hodId       Int?
-  managerId   Int?
-  executiveId Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  gstNo           String   @unique
+  emailId         String   @unique
+  businessType    String?
+  state           String?
+  city            String?
+  website         String?
+  products        Json?
+  creditTerms     String
+  creditLimit     String
+  remark          String
+  gstpdf          String?
+  hodId           Int?
+  managerId       Int?
+  executiveId     Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   contacts         VendorContact[]    @relation("VendorContacts")
   bankDetails      BankDetail[]       @relation("VendorBankDetails")
   inventory        Inventory[]
   materialDelivery MaterialDelivery[]
+  vendorPayment    VendorPayment[]
 }
 
 model BankDetail {
@@ -208,23 +236,24 @@ model VendorContact {
 }
 
 model Customer {
-  id               Int                @id @default(autoincrement())
-  customerCode     String?            @unique
-  customerId       String             @unique
-  customerName     String
-  registerAddress  String
-  gstNo            String             @unique
-  contactName      String
-  contactNumber    String
+  id              Int     @id @default(autoincrement())
+  customerCode    String? @unique
+  customerName    String
+  registerAddress String
+  gstNo           String  @unique
+
   emailId          String             @unique
   gstpdf           String?
+  businessType     String?
+  state            String?
+  city             String?
   hodId            Int?
   managerId        Int?
   executiveId      Int?
   Sites            Site[]
   Task             Task[]
   website          String?
-  products         Json?
+  products         String[]
   creditTerms      String
   creditLimit      String
   remark           String
@@ -262,14 +291,19 @@ model CustomerContact {
 }
 
 model Site {
-  id               Int                @id @default(autoincrement())
-  siteCode         String?            @unique
-  customerId       Int
-  siteName         String
-  siteAddress      String
-  contactName      Json?
-  contactNumber    Json?
-  emailId          Json?
+  id            Int     @id @default(autoincrement())
+  siteCode      String? @unique
+  customerId    Int
+  siteName      String
+  siteAddress   String
+  contactName   Json?
+  contactNumber Json?
+  emailId       Json?
+  state         String?
+  city          String?
+  gstNo         String
+  gstpdf        String?
+
   hodId            Int?
   executiveId      Int?
   managerId        Int?
@@ -317,7 +351,26 @@ model ContractInventory {
   updatedAt DateTime @updatedAt
 }
 
-model Task {
+model VendorPayment{
+  id              Int      @id @default(autoincrement())
+  vendorId        Int
+  inventoryId     Int?
+  purchaseInvoiceNo  String
+  invoiceGrossAmount String
+  dueAmount       String
+  paidAmount     String
+  paymentDate    DateTime
+  paymentType String
+  referenceNo String
+  remark String
+  vendor          Vendor   @relation(fields: [vendorId], references: [id])
+  inventory       Inventory? @relation(fields: [inventoryId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+  model Task {
   id           Int    @id @default(autoincrement())
   serviceId    Int
   departmentId Int

@@ -6,7 +6,6 @@ import {
   IsOptional,
   IsArray,
   ValidateNested,
-  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -62,15 +61,32 @@ class CustomerBankDetailDto {
   branchName: string;
 }
 
+class ProductDto {
+  @IsNotEmpty()
+  @IsString()
+  productName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  category: string;
+
+  @IsNotEmpty()
+  @IsString()
+  subCategory: string;
+}
+
 export class CreateCustomerDto {
 
   @IsNotEmpty()
   @IsString()
   customerCode :string;
 
-  @IsNotEmpty()
-  @IsString()
-  customerId: string;
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductDto) // Create a ProductDto class for individual product properties
+  products?: ProductDto[];
+
 
   @IsNotEmpty()
   @IsString()
@@ -86,11 +102,19 @@ export class CreateCustomerDto {
 
   @IsNotEmpty()
   @IsString()
-  contactName: string;
+  gstpdf: string;
 
   @IsNotEmpty()
   @IsString()
-  contactNumber: string;
+  businessType: string;
+  
+  @IsNotEmpty()
+  @IsString()
+  state: string;
+
+  @IsNotEmpty()
+  @IsString()
+  city: string;
 
   @IsNotEmpty()
   @IsEmail()
@@ -100,10 +124,7 @@ export class CreateCustomerDto {
   @IsString()
   website?: string;
 
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  products?: string[]; // example: ["a", "b", "c"]
+
 
   @IsNotEmpty()
   @IsString()

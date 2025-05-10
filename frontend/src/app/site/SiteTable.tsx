@@ -14,6 +14,10 @@ interface Site {
   siteCode: string;
   siteName: string;
   siteAddress: string;
+  state: string;
+  city: string;
+  gstNo: string;
+  gstpdf: string;
   contactName: string[];
   contactNumber: string[];
   emailId: string[];
@@ -23,6 +27,10 @@ interface Site {
 interface FormData {
   siteName: string;
   siteAddress: string;
+  state: string;
+  city: string;
+  gstNo: string;
+  gstpdf: string;
   contactName: string[];
   contactNumber: string[];
   emailId: string[];
@@ -31,21 +39,32 @@ interface FormData {
 
 const SiteTable: React.FC = () => {
   const [sites, setSites] = useState<Site[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [gstPdfFile, setGstPdfFile] = useState<File | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [formData, setFormData] = useState<FormData>({
     siteName: "",
     siteAddress: "",
+    state: "",
+    city: "",
+    gstNo: "",
+    gstpdf: "",
     contactName: [""],
     contactNumber: [""],
     emailId: [""],
     customerId: 0,
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    setGstPdfFile(file);
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
 
   const fetchSites = async () => {
     try {
@@ -55,6 +74,18 @@ const SiteTable: React.FC = () => {
       console.error("Error fetching sites:", error);
     }
   };
+
+  const filteredSites = sites.filter(
+    (site) =>
+      site.siteName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.Customer.customerName
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      site.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.gstNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.siteAddress.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const fetchCustomers = async () => {
     try {
@@ -73,8 +104,8 @@ const SiteTable: React.FC = () => {
     if (index !== undefined) {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: (prevData[name as keyof FormData] as string[]).map((item, idx) =>
-          idx === index ? value : item
+        [name]: (prevData[name as keyof FormData] as string[]).map(
+          (item, idx) => (idx === index ? value : item)
         ),
       }));
     } else {
@@ -107,27 +138,73 @@ const SiteTable: React.FC = () => {
   };
 
   const handleCreate = async () => {
-    const { siteName, siteAddress, contactName, contactNumber, emailId } = formData;
-    if (!siteName || !siteAddress || !contactName || !contactNumber || !emailId) {
-      alert("Please fill in all required fields.");
+    // Define required fields
+    const requiredFields = [
+      "siteName",
+      "siteAddress",
+      "state",
+      "city",
+      "gstNo",
+    ];
+
+    // Find missing fields
+    const missingFields = requiredFields.filter(
+      (field) => !formData[field as keyof typeof formData]?.toString().trim()
+    );
+
+    if (missingFields.length > 0) {
+      alert(
+        `Please fill out the following fields: ${missingFields.join(", ")}`
+      );
       return;
     }
+
+    const data = new FormData();
+
+    for (const key in formData) {
+      const value = (formData as any)[key];
+
+      if (Array.isArray(value)) {
+        value.forEach((v: string) => {
+          data.append(`${key}[]`, v);
+        });
+      } else if (value !== null && value !== undefined) {
+        data.append(key, value);
+      }
+    }
+
+    if (gstPdfFile) {
+      data.append("gstpdf", gstPdfFile, gstPdfFile.name);
+    }
+
     try {
-      await axios.post("http://localhost:8000/sites", formData);
+      await axios.post("http://localhost:8000/sites", data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       alert("Site added successfully!");
       setIsCreateModalOpen(false);
+      setGstPdfFile(null); // Reset GST PDF after submission
       fetchSites();
     } catch (error) {
       console.error("Error adding site:", error);
+      alert("Failed to add site. Please try again.");
     }
   };
 
   const handleUpdate = async () => {
     if (selectedSite) {
       try {
-        await axios.put(`http://localhost:8000/sites/${selectedSite.id}`, formData);
+        await axios.put(
+          `http://localhost:8000/sites/${selectedSite.id}`,
+          formData
+        );
         alert("Site updated successfully!");
         setIsUpdateModalOpen(false);
+        setGstPdfFile(null); // Reset GST PDF after submission
+
         fetchSites();
       } catch (error) {
         console.error("Error updating site:", error);
@@ -154,7 +231,7 @@ const SiteTable: React.FC = () => {
 
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentSites = sites.slice(indexOfFirst, indexOfLast);
+  const currentSites = filteredSites.slice(indexOfFirst, indexOfLast);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -167,6 +244,10 @@ const SiteTable: React.FC = () => {
               setFormData({
                 siteName: "",
                 siteAddress: "",
+                state: "",
+                city: "",
+                gstNo: "",
+                gstpdf: "",
                 contactName: [""],
                 contactNumber: [""],
                 emailId: [""],
@@ -178,6 +259,13 @@ const SiteTable: React.FC = () => {
           >
             Add Customer Site
           </button>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search ....."
+            className="border p-2 rounded w-full max-w-md"
+          />
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[800px] w-full text-center border-collapse border border-gray-200">
@@ -187,9 +275,9 @@ const SiteTable: React.FC = () => {
                 <th className="px-6 py-3 text-left">Site Name</th>
                 <th className="px-6 py-3 text-left">Customer</th>
                 <th className="px-6 py-3 text-left">Site Address</th>
-                <th className="px-6 py-3 text-left">Contact Name</th>
-                <th className="px-6 py-3 text-left">Contact Number</th>
-                <th className="px-6 py-3 text-left">Email ID</th>
+                <th className="px-6 py-3 text-left">State</th>
+                <th className="px-6 py-3 text-left">City</th>
+                <th className="px-6 py-3 text-left">GST PDF</th>
                 <th className="px-6 py-3 text-left">Actions</th>
               </tr>
             </thead>
@@ -198,11 +286,25 @@ const SiteTable: React.FC = () => {
                 <tr key={site.id} className="hover:bg-gray-100">
                   <td className="border px-6 py-3">{site.siteCode}</td>
                   <td className="border px-6 py-3">{site.siteName}</td>
-                  <td className="border px-6 py-3">{site.Customer.customerName}</td>
+                  <td className="border px-6 py-3">
+                    {site.Customer.customerName}
+                  </td>
                   <td className="border px-6 py-3">{site.siteAddress}</td>
-                  <td className="border px-6 py-3">{site.contactName.join(", ")}</td>
-                  <td className="border px-6 py-3">{site.contactNumber.join(", ")}</td>
-                  <td className="border px-6 py-3">{site.emailId.join(", ")}</td>
+                  <td className="border px-6 py-3">{site.state}</td>
+                  <td className="border px-6 py-3">{site.city}</td>
+                  <td className="p-2 border text-blue-900">
+                    {site.gstpdf ? (
+                      <a
+                        href={`http://localhost:8000/gst/${site.gstpdf}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      "No PDF"
+                    )}
+                  </td>
                   <td className="border px-6 py-3">
                     <div className="flex justify-center items-center gap-3">
                       <button
@@ -211,11 +313,16 @@ const SiteTable: React.FC = () => {
                           setFormData({
                             siteName: site.siteName,
                             siteAddress: site.siteAddress,
+                            state: site.state,
+                            city: site.city,
+                            gstNo: site.gstNo,
+                            gstpdf: site.gstpdf,
                             contactName: [...site.contactName],
                             contactNumber: [...site.contactNumber],
                             emailId: [...site.emailId],
                             customerId: site.customerId,
                           });
+                          setGstPdfFile(null);
                           setIsUpdateModalOpen(true);
                         }}
                         className="text-blue-500 hover:text-blue-700"
@@ -259,6 +366,8 @@ const SiteTable: React.FC = () => {
           title={isCreateModalOpen ? "Add Customer Site" : "Update Site"}
           formData={formData}
           customers={customers}
+          gstPdfFile={gstPdfFile}
+          setGstPdfFile={setGstPdfFile}
           onInputChange={handleInputChange}
           onAddField={handleAddField}
           onRemoveField={handleRemoveField}
@@ -277,14 +386,33 @@ const Modal: React.FC<{
   title: string;
   formData: FormData;
   customers: Customer[];
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, index?: number) => void;
+  gstPdfFile: File | null; // Accept gstPdfFile as a prop
+  setGstPdfFile: React.Dispatch<React.SetStateAction<File | null>>; // Accept the setter function for gstPdfFile
+  onInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    index?: number
+  ) => void;
   onAddField: () => void;
-  onRemoveField: (field: "contactName" | "contactNumber" | "emailId", index: number) => void;
+  onRemoveField: (
+    field: "contactName" | "contactNumber" | "emailId",
+    index: number
+  ) => void;
   onSave: () => void;
   onClose: () => void;
-}> = ({ title, formData, customers, onInputChange, onAddField, onRemoveField, onSave, onClose }) => (
+}> = ({
+  title,
+  formData,
+  customers,
+  gstPdfFile,
+  setGstPdfFile,
+  onInputChange,
+  onAddField,
+  onRemoveField,
+  onSave,
+  onClose,
+}) => (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white p-6 rounded-lg w-[500px] max-h-[90vh] overflow-auto">
+    <div className="bg-white p-6 mt-20 rounded-lg w-[500px] max-h-[90vh] overflow-auto">
       <h2 className="text-xl font-bold mb-4">{title}</h2>
 
       <select
@@ -308,6 +436,7 @@ const Modal: React.FC<{
         placeholder="Site Name"
         className="w-full mb-3 p-2 border rounded"
       />
+
       <input
         name="siteAddress"
         value={formData.siteAddress}
@@ -315,6 +444,59 @@ const Modal: React.FC<{
         placeholder="Site Address"
         className="w-full mb-3 p-2 border rounded"
       />
+
+      <input
+        name="state"
+        value={formData.state}
+        onChange={onInputChange}
+        placeholder="State"
+        className="w-full mb-3 p-2 border rounded"
+      />
+
+      <input
+        name="city"
+        value={formData.city}
+        onChange={onInputChange}
+        placeholder="City"
+        className="w-full mb-3 p-2 border rounded"
+      />
+
+      <input
+        name="gstNo"
+        value={formData.gstNo}
+        onChange={onInputChange}
+        placeholder="GST No"
+        className="w-full mb-3 p-2 border rounded"
+      />
+
+<div className="mt-4">
+      <label htmlFor="gstPdfFile" className="font-semibold block mb-2">
+        GST Certificate (PDF)
+      </label>
+      <input
+        id="gstPdfFile"
+        type="file"
+        accept="application/pdf"
+        onChange={(e) => {
+          const file = e.target.files?.[0]; // Accessing the first file from the FileList
+          if (file) {
+            if (file.type === "application/pdf") {
+              setGstPdfFile(file); // Update the state with the file
+            } else {
+              alert("Please upload a valid PDF file.");
+              e.target.value = ""; // Reset input to allow re-selection
+            }
+          }
+        }}
+        className="block w-full border border-gray-300 p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      />
+      {gstPdfFile && (
+        <p className="text-sm text-green-700 mt-1">
+          Selected: {gstPdfFile.name}
+        </p>
+      )}
+    </div>
+
 
       {formData.contactName.map((_, index) => (
         <div key={index} className="flex items-center gap-2 mb-2">

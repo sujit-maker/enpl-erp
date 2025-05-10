@@ -1,6 +1,8 @@
 import { IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class UpdateSubCategoryDto {
+
+  
   @IsNotEmpty()
   @IsString()
   subCategoryName: string;
@@ -8,4 +10,8 @@ export class UpdateSubCategoryDto {
   @IsOptional()
   @IsNumber()
   serviceCategoryId?: number; 
+
+  @IsOptional()
+  @IsString()
+  serviceSubCatId: string; 
 }

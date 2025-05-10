@@ -1,0 +1,408 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { PencilLine, Trash } from "lucide-react"; // Added Trash icon for delete
+import { VendorCombobox } from "@/components/ui/VendorCombobox";
+
+interface Vendor {
+  id: number;
+  vendorName: string;
+}
+
+interface VendorPayment {
+  id?: number;
+  vendorId: number;
+  purchaseInvoiceNo: string;
+  invoiceGrossAmount: string;
+  dueAmount: string;
+  paidAmount: string;
+  paymentDate: string;
+  referenceNo: string;
+  paymentType: string;
+  remark: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const initialFormState: VendorPayment = {
+  vendorId: 0,
+  purchaseInvoiceNo: "",
+  invoiceGrossAmount: "",
+  dueAmount: "",
+  paidAmount: "",
+  paymentType: "",
+  referenceNo: "",
+  remark: "",
+  paymentDate: "",
+  createdAt: "",
+  updatedAt: "",
+};
+
+const VendorPaymentTable: React.FC = () => {
+  const [payments, setPayments] = useState<VendorPayment[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [formData, setFormData] = useState<VendorPayment>(initialFormState);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filtered = payments.filter((p) => {
+    const vendorName =
+      vendors.find((v) => v.id === p.vendorId)?.vendorName.toLowerCase() || "";
+    const q = searchQuery.toLowerCase();
+    return (
+      vendorName.includes(q) ||
+      p.paymentDate.toLowerCase().includes(q) ||
+      p.referenceNo.toLowerCase().includes(q) ||
+      p.paymentType.toLowerCase().includes(q) ||
+      p.remark.toLowerCase().includes(q) ||
+      p.purchaseInvoiceNo.toLowerCase().includes(q) ||
+      p.invoiceGrossAmount.toLowerCase().includes(q) ||
+      p.dueAmount.toLowerCase().includes(q)
+    );
+  });
+
+  const paginated = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  useEffect(() => {
+    fetchPayments();
+    fetchVendors();
+  }, []);
+
+  const fetchPayments = async () => {
+    const res = await axios.get("http://localhost:8000/vendor-payment");
+    setPayments(res.data);
+  };
+
+  const fetchVendors = async () => {
+    const res = await axios.get("http://localhost:8000/vendors");
+    setVendors(res.data);
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      if (formData.id) {
+        await axios.put(
+          `http://localhost:8000/vendor-payment/${formData.id}`,
+          formData
+        );
+        alert("Payment updated!");
+      } else {
+        await axios.post("http://localhost:8000/vendor-payment", formData);
+        alert("Payment added!");
+      }
+      setFormData(initialFormState);
+      setIsModalOpen(false);
+      fetchPayments();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving payment");
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this payment?"
+    );
+    if (confirmed) {
+      try {
+        await axios.delete(`http://localhost:8000/vendor-payment/${id}`);
+        alert("Payment deleted!");
+        fetchPayments(); // Refresh the table after deletion
+      } catch (err) {
+        console.error(err);
+        alert("Error deleting payment");
+      }
+    }
+  };
+
+  const openModal = (data?: VendorPayment) => {
+    if (data) setFormData(data);
+    else setFormData(initialFormState);
+    setIsModalOpen(true);
+  };
+
+  return (
+    <div className="flex-1 p-4 lg:ml-72 mt-20">
+      <div className="flex flex-col md:flex-row justify-between mb-4 gap-2">
+        <button
+          onClick={() => openModal()}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Add Payment
+        </button>
+        <input
+          type="text"
+          placeholder="Search Payments..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border p-2 rounded w-full md:w-64"
+        />
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-[900px] w-full border text-sm">
+          <thead className="bg-gray-100 text-center">
+            <tr>
+              <th className="p-2 border">Entry Date</th>
+              <th className="p-2 border">Vendor</th>
+              <th className="p-2 border">Payment Date</th>
+              <th className="p-2 border">Reference</th>
+              <th className="p-2 border">Gross Amount</th>
+              <th className="p-2 border">Due Amount</th>
+              <th className="p-2 border">Paid Amount</th>
+              <th className="p-2 border">Payment Mode</th>
+              <th className="p-2 border">Remarks</th>
+              <th className="p-2 border">Purchase Invoice</th>
+              <th className="p-2 border text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.map((p) => (
+              <tr key={p.id}>
+                <td className="p-2 border text-center">
+                  {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "N/A"}
+                </td>
+                <td className="p-2 border text-center">
+                  {vendors.find((v) => v.id === p.vendorId)?.vendorName ||
+                    "N/A"}
+                </td>
+                <td className="p-2 border text-center">{p.paymentDate}</td>
+                <td className="p-2 border text-center">{p.referenceNo}</td>
+                <td className="p-2 border text-center">
+                  {p.invoiceGrossAmount}
+                </td>
+                <td className="p-2 border text-center">{p.dueAmount}</td>
+                <td className="p-2 border text-center">{p.paidAmount}</td>
+                <td className="p-2 border text-center">{p.paymentType}</td>
+                <td className="p-2 border text-center">{p.remark}</td>
+                <td className="p-2 border text-center">
+                  {p.purchaseInvoiceNo}
+                </td>
+                <td className="p-2 border text-center">
+                  <button
+                    onClick={() => openModal(p)}
+                    className="text-blue-600 mr-2"
+                  >
+                    <PencilLine size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id!)} // Ensure non-null id
+                    className="text-red-600"
+                  >
+                    <Trash size={18} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex justify-center mt-4 gap-2">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i + 1}
+            onClick={() => setCurrentPage(i + 1)}
+            className={`px-3 py-1 border rounded ${
+              currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl">
+            <h2 className="text-xl font-bold mb-4">
+              {formData.id ? "Edit Payment" : "Add Payment"}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="font-semibold mb-1 block">Vendor</label>
+               <VendorCombobox
+  selectedValue={formData.vendorId}
+  onSelect={async (val) => {
+    setFormData((prev) => ({ ...prev, vendorId: val }));
+
+    try {
+      const res = await axios.get(`http://localhost:8000/inventory?vendorId=${val}`);
+      if (res.data && res.data.length > 0) {
+        // pick the latest invoice, or however you want
+        const latestInvoice = res.data[0]; 
+        setFormData((prev) => ({
+          ...prev,
+          purchaseInvoiceNo: latestInvoice.purchaseInvoice || "",
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          purchaseInvoiceNo: "",
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch inventory", err);
+      setFormData((prev) => ({
+        ...prev,
+        purchaseInvoiceNo: "",
+      }));
+    }
+  }}
+  placeholder="Select Vendor"
+/>
+
+              </div>
+
+              <div>
+  <label className="font-semibold mb-1 block">Purchase Invoice</label>
+  <input
+    type="text"
+    name="purchaseInvoiceNo"
+    value={formData.purchaseInvoiceNo}
+    readOnly
+    className="border p-2 rounded w-full bg-gray-100"
+  />
+</div>
+
+
+              <div>
+                <label className="font-semibold mb-1 block">
+                  Invoice Gross Amount
+                </label>
+                <input
+                  type="text"
+                  name="invoiceGrossAmount"
+                  value={formData.invoiceGrossAmount}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Due Amount</label>
+                <input
+                  type="text"
+                  name="dueAmount"
+                  value={formData.dueAmount}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div>
+                <label className="font-semibold mb-1 block">Payment Date</label>
+                <input
+                  type="date"
+                  name="paymentDate"
+                  value={formData.paymentDate}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Payment Type</label>
+
+                <select
+                  name="paymentType"
+                  value={formData.paymentType}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Credit Note">Credit Note</option>
+                  <option value="Write Off">Write Off</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Paid Amount</label>
+                <input
+                  type="text"
+                  name="paidAmount"
+                  value={formData.paidAmount}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+              <div>
+                <label className="font-semibold mb-1 block">Reference</label>
+                <input
+                  type="text"
+                  name="referenceNo"
+                  value={formData.referenceNo}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="font-semibold mb-1 block">Remark</label>
+                <input
+                  type="text"
+                  name="remark"
+                  value={formData.remark}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default VendorPaymentTable;

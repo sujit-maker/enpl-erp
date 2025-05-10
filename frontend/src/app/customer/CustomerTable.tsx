@@ -21,15 +21,16 @@ interface BankDetail {
   branchName: string;
 }
 
-  interface Customer {
+interface Customer {
   id?: number;
   customerCode: string;
-  customerId: string;
   customerName: string;
   registerAddress: string;
   gstNo: string;
-  contactName: string;
-  contactNumber: string;
+  gstpdf: string;
+  businessType: string;
+  state: string;
+  city: string;
   emailId: string;
   website: string;
   products: string[];
@@ -60,12 +61,13 @@ const emptyBank: BankDetail = {
 
 const initialFormState: Customer = {
   customerCode: "",
-  customerId: "",
   customerName: "",
   registerAddress: "",
   gstNo: "",
-  contactName: "",
-  contactNumber: "",
+  gstpdf: "",
+  businessType: "",
+  state: "",
+  city: "",
   emailId: "",
   website: "",
   products: [],
@@ -76,9 +78,10 @@ const initialFormState: Customer = {
   bankDetails: [emptyBank],
 };
 
-const CustomerTable: React.FC = () => {
+  const CustomerTable: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [gstpdfFile, setGstPdfFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState<Customer>(initialFormState);
 
@@ -103,8 +106,8 @@ const CustomerTable: React.FC = () => {
   }, []);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    _field: string,
     index?: number,
     type?: string
   ) => {
@@ -142,6 +145,7 @@ const CustomerTable: React.FC = () => {
       ...prev,
       bankDetails: [...prev.bankDetails, { ...emptyBank }],
     }));
+
   const removeBank = (index: number) => {
     const updated = [...formData.bankDetails];
     updated.splice(index, 1);
@@ -159,10 +163,9 @@ const CustomerTable: React.FC = () => {
       "Are you sure you want to delete this customer?"
     );
     if (!confirm) return;
-
     try {
       await axios.delete(`http://localhost:8000/customers/${id}`);
-      alert("Vendor deleted successfully!");
+      alert("Customer deleted successfully!");
       fetchCustomers();
     } catch (err) {
       console.error("Error deleting customer:", err);
@@ -175,8 +178,9 @@ const CustomerTable: React.FC = () => {
       "customerName",
       "registerAddress",
       "gstNo",
-      "contactName",
-      "contactNumber",
+      "businessType",
+      "state",
+      "city",
       "emailId",
       "website",
       "remark",
@@ -187,6 +191,7 @@ const CustomerTable: React.FC = () => {
     const missing = required.filter(
       (f) => !formData[f as keyof Customer]?.toString().trim()
     );
+
     if (missing.length > 0) {
       alert(`Missing fields: ${missing.join(", ")}`);
       return;
@@ -196,6 +201,7 @@ const CustomerTable: React.FC = () => {
       (c) =>
         c.firstName.trim() || c.lastName.trim() || c.contactPhoneNumber.trim()
     );
+
     const validBanks = formData.bankDetails.filter(
       (b) => b.accountNumber.trim() || b.ifscCode.trim() || b.bankName.trim()
     );
@@ -204,49 +210,75 @@ const CustomerTable: React.FC = () => {
       alert("Add at least one valid contact.");
       return;
     }
+
     if (validBanks.length === 0) {
       alert("Add at least one valid bank detail.");
       return;
     }
 
     try {
+      const form = new FormData();
+
+      // Append individual fields
+      form.append("registerAddress", formData.registerAddress);
+      form.append("gstNo", formData.gstNo);
+      form.append("customerName", formData.customerName);
+      form.append("businessType", formData.businessType);
+      form.append("state", formData.state);
+      form.append("city", formData.city);
+      form.append("emailId", formData.emailId);
+      form.append("website", formData.website);
+      form.append("remark", formData.remark);
+      form.append("creditTerms", formData.creditTerms.toString());
+      form.append("creditLimit", formData.creditLimit.toString());
+
+      // Append JSON-encoded nested data
+      form.append("contacts", JSON.stringify(validContacts));
+      form.append("bankDetails", JSON.stringify(validBanks));
+      form.append("products", JSON.stringify(formData.products));
+
+    // Append the GST certificate file with the correct field name
+    if (gstpdfFile) {
+      form.append("gstCertificate", gstpdfFile);
+    }
+
+      // Create or update
       if (formData.id) {
-        await axios.put(`http://localhost:8000/customers/${formData.id}`, {
-          ...formData,
-          contacts: validContacts,
-          bankDetails: validBanks,
-        });
+        await axios.put(
+          `http://localhost:8000/customers/${formData.id}`,
+          form,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
       } else {
-        await axios.post("http://localhost:8000/customers", {
-          ...formData,
-          contacts: validContacts,
-          bankDetails: validBanks,
+        await axios.post("http://localhost:8000/customers", form, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
       }
 
-      alert(
-        formData.id
-          ? "Customer updated successfully!"
-          : "Customer created successfully!"
-      );
+      alert(formData.id ? "Customer updated!" : "Customer created!");
       setFormData(initialFormState);
+      setGstPdfFile(null);
       setIsCreateModalOpen(false);
       fetchCustomers();
     } catch (err) {
-      console.error("Error creating customer:", err);
-      alert("Failed to create customer. Please try again.");
+      console.error("Error creating/updating customer:", err);
+      alert("Failed to submit. Please try again.");
     }
   };
 
   return (
     <div className="flex-1 p-6 overflow-auto lg:ml-72">
       <div className="flex justify-between items-center mb-5 mt-16">
-      <button
-  onClick={() => {
-    setFormData(initialFormState); // ← Reset here
-    setIsCreateModalOpen(true);
-  }}
-
+        <button
+          onClick={() => {
+            setIsCreateModalOpen(true);
+            setFormData((prev) => ({
+              ...initialFormState,
+              products: prev.products,
+            })); 
+          }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Add Customer
@@ -260,7 +292,10 @@ const CustomerTable: React.FC = () => {
               <th className="p-2 border">Customer ID</th>
               <th className="p-2 border">Customer Name</th>
               <th className="p-2 border">Contacts</th>
+              <th className="p-2 border">Bank Details</th>
               <th className="p-2 border">Products</th>
+              <th className="p-2 border">GST No</th>
+              <th className="p-2 border">GST Certificate</th>
               <th className="p-2 border">Actions</th>
             </tr>
           </thead>
@@ -274,10 +309,29 @@ const CustomerTable: React.FC = () => {
                     .map((c) => `${c.firstName} ${c.lastName}`)
                     .join(", ")}
                 </td>
+                <td className="p-2 border">
+                  {cust.bankDetails
+                    .map((b) => `${b.accountNumber} (${b.ifscCode})`)
+                    .join(", ")}
+                </td>
                 <td className="p-2 border  text-red-800">
                   {Array.isArray(cust.products)
                     ? cust.products.map((p) => p).join(", ")
                     : ""}
+                </td>
+                <td className="p-2 border">{cust.gstNo}</td>
+                <td className="p-2 border text-blue-900">
+                  {cust.gstpdf ? (
+                    <a
+                      href={`http://localhost:8000/gst/${cust.gstpdf}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View PDF
+                    </a>
+                  ) : (
+                    "No PDF"
+                  )}
                 </td>
                 <td className="p-2 border flex justify-center gap-3 items-center">
                   <button
@@ -302,174 +356,204 @@ const CustomerTable: React.FC = () => {
       </div>
 
       {isCreateModalOpen && (
-  <div className="fixed inset-0 ml-48 mt-20  bg-gray bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden">
-      <div className="overflow-auto max-h-[90vh]">
-        <div className="min-w-[800px] p-6">
-          <h3 className="text-xl font-bold text-center mb-6 text-gray-800">
-            {formData.id ? "Edit Customer" : "Create Customer"}
-          </h3>
+        <div className="fixed inset-0 ml-48 mt-20  bg-gray bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden">
+            <div className="overflow-auto max-h-[90vh]">
+              <div className="min-w-[800px] p-6">
+                <h3 className="text-xl font-bold text-center mb-6 text-gray-800">
+                  {formData.id ? "Edit Customer" : "Create Customer"}
+                </h3>
+                <div className="mt-4">
+                  <label className="font-semibold block mb-2">
+                    Business Type
+                  </label>
+                  <select
+                    name="businessType"
+                    value={formData.businessType}
+                    onChange={(e) => handleInputChange(e, "businessType")}
+                    className="border p-2 rounded w-full"
+                  >
+                    <option value="">Select Business Type</option>
+                    <option value="SOHO">SOHO</option>
+                    <option value="SMB">SMB</option>
+                    <option value="ENT">ENT</option>
+                    <option value="EDU">EDU</option>
+                    <option value="NPO">NPO</option>
+                    <option value="GOV">GOV</option>
+                    <option value="Reseller">Reseller</option>
+                  </select>
+                </div>
 
-          {/* Basic Inputs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              "customerName",
-              "registerAddress",
-              "gstNo",
-              "contactName",
-              "contactNumber",
-              "emailId",
-              "website",
-              "creditTerms",
-              "creditLimit",
-              "remark",
-            ].map((field) => (
-              <input
-                key={field}
-                name={field}
-                placeholder={field.replace(/([A-Z])/g, " $1")}
-                value={(formData as any)[field]}
-                onChange={(e) => handleInputChange(e, field)}
-                className="border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            ))}
-          </div>
+                {/* Basic Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  {[
+                    "customerName",
+                    "companyName",
+                    "registerAddress",
+                    "state",
+                    "city",
+                    "gstNo",
+                    "emailId",
+                    "creditTerms",
+                    "creditLimit",
+                    "website",
+                    "remark",
+                  ].map((field) => (
+                    <input
+                      key={field}
+                      name={field}
+                      placeholder={field.replace(/([A-Z])/g, " $1")}
+                     value={((formData as any)[field] || '')}
+                      onChange={(e) => handleInputChange(e, field)}
+                      className="border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  ))}
+                </div>
 
-          {/* Products */}
-          {/* <div className="mt-4">
-  <label className="font-semibold block mb-2">GST Certificate (PDF)</label>
-  <input
-    type="file"
-    accept="application/pdf"
-    onChange={(e) => {
-      const file = e.target.files?.[0];
-      if (file && file.type === "application/pdf") {
-        setGstPdfFile(file);
-      } else {
-        alert("Please upload a valid PDF file.");
-      }
-    }}
-    className="block w-full border p-2 rounded"
-  />
-  {gstPdfFile && (
-    <p className="text-sm text-green-700 mt-1">{gstPdfFile.name}</p>
-  )}
-</div> */}
+               
 
-<div className="mt-6">
-  <label className="font-semibold block mb-2">Products</label>
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-    {categories.map((category) => (
-      <label key={category} className="inline-flex items-center">
-        <input
-          type="checkbox"
-          value={category}
-          checked={formData.products.includes(category)}
-          onChange={(e) => {
-            const { checked, value } = e.target;
-            setFormData((prev) => ({
-              ...prev,
-              products: checked
-                ? [...prev.products, value]
-                : prev.products.filter((p) => p !== value),
-            }));
-          }}
-          className="mr-2"
-        />
-        <span>{category}</span>
-      </label>
-    ))}
-  </div>
-</div>
-
-
-          {/* Contacts */}
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold">Contacts</h4>
-              <button onClick={addContact} className="text-blue-600">
-                <Plus size={20} />
-              </button>
-            </div>
-            {formData.contacts.map((contact, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2 items-center"
-              >
-                {Object.keys(emptyContact).map((key) => (
+                <div className="mt-4">
+                  <label className="font-semibold block mb-2">
+                    GST Certificate (PDF)
+                  </label>
                   <input
-                    key={key}
-                    name={key}
-                    placeholder={key.replace(/([A-Z])/g, " $1")}
-                    value={(contact as any)[key]}
-                    onChange={(e) => handleInputChange(e, key, i, "contact")}
-                    className="border p-2 rounded-lg"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && file.type === "application/pdf") {
+                        setGstPdfFile(file);
+                      } else {
+                        alert("Please upload a valid PDF file.");
+                      }
+                    }}
+                    className="block w-full border p-2 rounded"
                   />
-                ))}
-                <button
-                  onClick={() => removeContact(i)}
-                  className="text-red-600 font-bold"
-                >
-                  &minus;
-                </button>
-              </div>
-            ))}
-          </div>
+                  {gstpdfFile && (
+                    <p className="text-sm text-green-700 mt-1">
+                      {gstpdfFile.name}
+                    </p>
+                  )}
+                </div>
 
-          {/* Bank Details */}
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold">Bank Details</h4>
-              <button onClick={addBank} className="text-blue-600">
-                <Plus size={20} />
-              </button>
+                <div className="mt-6">
+                  <label className="font-semibold block mb-2">Products</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {categories.map((category) => (
+                      <label
+                        key={category}
+                        className="inline-flex items-center"
+                      >
+                        <input
+                          type="checkbox"
+                          value={category}
+                          checked={formData.products.includes(category)}
+                          onChange={(e) => {
+                            const { checked, value } = e.target;
+                            setFormData((prev) => ({
+                              ...prev,
+                              products: checked
+                                ? [...prev.products, value]
+                                : prev.products.filter((p) => p !== value),
+                            }));
+                          }}
+                          className="mr-2"
+                        />
+                        <span>{category}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Contacts */}
+                <div className="mt-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold">Contacts</h4>
+                    <button onClick={addContact} className="text-blue-600">
+                      <Plus size={20} />
+                    </button>
+                  </div>
+                  {formData.contacts.map((contact, i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2 items-center"
+                    >
+                      {Object.keys(emptyContact).map((key) => (
+                        <input
+                          key={key}
+                          name={key}
+                          placeholder={key.replace(/([A-Z])/g, " $1")}
+                          value={(contact as any)[key]}
+                          onChange={(e) =>
+                            handleInputChange(e, key, i, "contact")
+                          }
+                          className="border p-2 rounded-lg"
+                        />
+                      ))}
+                      <button
+                        onClick={() => removeContact(i)}
+                        className="text-red-600 font-bold"
+                      >
+                        &minus;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bank Details */}
+                <div className="mt-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold">Bank Details</h4>
+                    <button onClick={addBank} className="text-blue-600">
+                      <Plus size={20} />
+                    </button>
+                  </div>
+                  {formData.bankDetails.map((bank, i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2 items-center"
+                    >
+                      {Object.keys(emptyBank).map((key) => (
+                        <input
+                          key={key}
+                          name={key}
+                          placeholder={key.replace(/([A-Z])/g, " $1")}
+                          value={(bank as any)[key]}
+                          onChange={(e) => handleInputChange(e, key, i, "bank")}
+                          className="border p-2 rounded-lg"
+                        />
+                      ))}
+                      <button
+                        onClick={() => removeBank(i)}
+                        className="text-red-600 font-bold"
+                      >
+                        &minus;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => {
+                      setIsCreateModalOpen(false);
+                      setFormData(initialFormState);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleCreate}
+                    className="px-4 py-2 rounded bg-blue-600 text-white"
+                  >
+                    {formData.id ? "Update" : "Save"}
+                  </button>
+                </div>
+              </div>
             </div>
-            {formData.bankDetails.map((bank, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2 items-center"
-              >
-                {Object.keys(emptyBank).map((key) => (
-                  <input
-                    key={key}
-                    name={key}
-                    placeholder={key.replace(/([A-Z])/g, " $1")}
-                    value={(bank as any)[key]}
-                    onChange={(e) => handleInputChange(e, key, i, "bank")}
-                    className="border p-2 rounded-lg"
-                  />
-                ))}
-                <button
-                  onClick={() => removeBank(i)}
-                  className="text-red-600 font-bold"
-                >
-                  &minus;
-                </button>
-              </div>
-            ))}
           </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-            <button
-  onClick={() => {
-    setIsCreateModalOpen(false);
-    setFormData(initialFormState); // Reset on close
-  }}
->
-  Cancel
-</button>
-
-              <button
-                onClick={handleCreate}
-                className="px-4 py-2 rounded bg-blue-600 text-white"
-              >
-                {formData.id ? "Update" : "Save"}
-              </button>
-              </div>
         </div>
-      </div>
-    </div>
-  </div>
       )}
     </div>
   );

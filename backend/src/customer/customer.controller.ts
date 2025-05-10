@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Put, BadRequestException, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
   @Controller('customers')
   export class CustomerController {
@@ -9,9 +12,55 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 
   // Create a new customer
   @Post()
-  async create(@Body() createCustomerDto: CreateCustomerDto) {
-    return this.customerService.create(createCustomerDto);
+  @UseInterceptors(
+    FileInterceptor('gstCertificate', {
+      storage: diskStorage({
+        destination: './uploads/gst-certificates',
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype !== 'application/pdf') {
+          return cb(new Error('Only PDF files are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async create(
+    @Body() body: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    try {
+      const {
+        contacts,
+        bankDetails,
+        ...customerData
+      } = body;
+
+      const parsedContacts = JSON.parse(contacts || '[]');
+      const parsedBankDetails = JSON.parse(bankDetails || '[]');
+
+      if (file) {
+        customerData.gstpdf = file.filename;
+      }
+
+      return this.customerService.create({
+        ...customerData,
+        contacts: parsedContacts,
+        bankDetails: parsedBankDetails,
+      });
+    } catch (error) {
+      console.error('Error parsing customer form data:', error);
+      throw new BadRequestException('Invalid customer data');
+    }
   }
+
+  
+
 
   // Get all customers
   @Get()

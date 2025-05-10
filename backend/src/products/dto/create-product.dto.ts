@@ -16,6 +16,14 @@ export class CreateProductDto {
   @IsString()
   HSN: string;
 
+  @IsString()
+  @IsOptional()
+  unit: string;
+
+  @IsString()
+  @IsOptional()
+  gstRate: string;
+
   @IsInt()
   categoryId: number;
 

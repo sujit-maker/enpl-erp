@@ -10,7 +10,7 @@ export class ServiceSubCategoryService {
 
   // ✅ Create a new subcategory and ensure category exists
   async createSubCategory(createSubCategoryDto: CreateSubCategoryDto) {
-    const { subCategoryName, serviceCategoryId } = createSubCategoryDto;
+    const { serviceSubCatId, subCategoryName, serviceCategoryId } = createSubCategoryDto;
 
     // Check if category exists before proceeding
     const categoryExists = await this.prisma.serviceCategory.findUnique({
@@ -23,6 +23,7 @@ export class ServiceSubCategoryService {
 
     return this.prisma.serviceSubCategory.create({
       data: {
+        serviceSubCatId: createSubCategoryDto.serviceSubCatId,
         subCategoryName,
         category: {
           connect: { id: serviceCategoryId },
@@ -60,7 +61,7 @@ export class ServiceSubCategoryService {
   }
 
   async updateSubCategory(id: number, updateSubCategoryDto: UpdateSubCategoryDto) {
-    const { subCategoryName, serviceCategoryId } = updateSubCategoryDto;
+    const { serviceSubCatId, subCategoryName, serviceCategoryId } = updateSubCategoryDto;
   
     if (serviceCategoryId) {
       const categoryExists = await this.prisma.serviceCategory.findUnique({

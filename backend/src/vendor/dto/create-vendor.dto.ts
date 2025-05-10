@@ -83,11 +83,15 @@ export class CreateVendorDto {
 
   @IsNotEmpty()
   @IsString()
-  contactName: string;
-                
+  businessType: string;
+
   @IsNotEmpty()
   @IsString()
-  contactNumber: string;
+  state: string;
+
+  @IsNotEmpty()
+  @IsString()
+  city: string;
 
   @IsNotEmpty()
   @IsEmail()

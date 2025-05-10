@@ -2,11 +2,16 @@
 import { IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateSubCategoryDto {
-  @IsOptional()
+  @IsNotEmpty()
+  @IsString()
+  subCategoryId: string;
+
+  @IsNotEmpty()
   @IsString()
   subCategoryName: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
-  categoryId: number; 
+  categoryId: number;
 }
+

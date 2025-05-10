@@ -15,40 +15,55 @@ async create(createCustomerDto: CreateCustomerDto) {
     products,
     ...customerData
   } = createCustomerDto as any;
-
-  // Create the customer without customerCode first
-  const createdCustomer = await this.prisma.customer.create({
-    data: {
-      ...customerData,
-      products: Array.isArray(products) ? products : [],
-      contacts: {
-        create: contacts || [],
+  
+  let parsedProducts = [];
+  
+  try {
+    parsedProducts = typeof products === 'string' ? JSON.parse(products) : products;
+  } catch (err) {
+    console.error('Failed to parse products:', products);
+  }
+  
+  try {
+    // Step 1: Create the customer without customerCode first
+    const createdCustomer = await this.prisma.customer.create({
+      data: {
+        ...customerData,
+        products: parsedProducts,
+         contacts: {
+          create: contacts || [],
+        },
+        bankDetails: {
+          create: bankDetails || [],
+        },
       },
-      bankDetails: {
-        create: bankDetails || [],
+      include: {
+        contacts: true,
+        bankDetails: true,
       },
-    },
-    include: {
-      contacts: true,
-      bankDetails: true,
-    },
-  });
+    });
 
-  // Generate a customerCode based on the created customer ID
-  const customerCode = `EN-CA-${String(createdCustomer.id).padStart(3, '0')}`;
+    // Step 2: Generate a customerCode based on the created customer ID
+    const customerCode = `ENPL-CUS-MMYY-${String(createdCustomer.id).padStart(3, '0')}`;
 
-  // Update the customer with the generated customerCode
-  const updatedCustomer = await this.prisma.customer.update({
-    where: { id: createdCustomer.id },
-    data: { customerCode },
-    include: {
-      contacts: true,
-      bankDetails: true,
-    },
-  });
+    // Step 3: Update the customer with the generated customerCode
+    const updatedCustomer = await this.prisma.customer.update({
+      where: { id: createdCustomer.id },
+      data: { customerCode },
+      include: {
+        contacts: true,
+        bankDetails: true,
+      },
+    });
 
-  return updatedCustomer;
+    return updatedCustomer;
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    throw error; // Optionally handle errors with custom messages
+  }
 }
+
+
 
   // Get all Customers
   async findAll() {
@@ -89,6 +104,7 @@ async create(createCustomerDto: CreateCustomerDto) {
       data: {
         ...rest,
         products: Array.isArray(products) ? products : [],
+
         // optionally handle contacts / bankDetails if needed
       },
       include: {

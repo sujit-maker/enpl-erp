@@ -41,27 +41,39 @@ export default function SerialNumberCombobox({
   const [serialNumbers, setSerialNumbers] = React.useState<SerialNumber[]>([]);
   const [input, setInput] = React.useState("");
 
-  React.useEffect(() => {
-    async function fetchSerialNumbers() {
-      try {
-        const res = await fetch("http://localhost:8000/inventory");
-        const data = await res.json();
-        setSerialNumbers(data);
-      } catch (error) {
-        console.error("Failed to fetch serial numbers:", error);
-      }
+React.useEffect(() => {
+  async function fetchSerialNumbers() {
+    try {
+      const res = await fetch("http://localhost:8000/inventory");
+      const data = await res.json();
+
+      // Flatten all product serial numbers across inventory items
+      const flattened: SerialNumber[] = data.flatMap((inv: any) =>
+        inv.products.map((p: any) => ({
+          id: p.id,
+          serialNumber: p.serialNumber,
+        }))
+      );
+
+      setSerialNumbers(flattened);
+    } catch (error) {
+      console.error("Failed to fetch serial numbers:", error);
     }
-    fetchSerialNumbers();
-  }, []);
+  }
+
+  fetchSerialNumbers();
+}, []);
+
 
   const selectedLabel = serialNumbers.find((p) => p.id === selectedValue)?.serialNumber;
 
   const filteredSerialNumbers =
-    input.length > 0
-      ? serialNumbers.filter((p) =>
-          p.serialNumber.toLowerCase().includes(input.toLowerCase())
-        )
-      : [];
+  input.length > 0
+    ? serialNumbers.filter((p) =>
+        p.serialNumber?.toLowerCase().includes(input.toLowerCase()) // Add optional chaining here
+      )
+    : [];
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

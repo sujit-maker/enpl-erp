@@ -27,7 +27,7 @@ export class ProductsService {
   }
   
   async createProduct(createProductDto: CreateProductDto) {
-    const { productName, productDescription, HSN, categoryId, subCategoryId } =
+    const { productName, productDescription, HSN, unit, gstRate, categoryId, subCategoryId } =
       createProductDto;
   
     // Find Category
@@ -89,6 +89,8 @@ export class ProductsService {
           productName,
           productDescription,
           HSN,
+          unit,
+          gstRate,
           categoryId: Number(categoryId),
           subCategoryId: subCategoryId ? Number(subCategoryId) : null,
         },
@@ -132,6 +134,8 @@ export class ProductsService {
         productName,
         productDescription,
         HSN,
+        unit,
+        gstRate,
         categoryId,
         subCategoryId,
       } = updateProductDto;
@@ -151,6 +155,8 @@ export class ProductsService {
           productName,
           productDescription,
           HSN,
+          unit,
+          gstRate,
           categoryId: categoryNumber,
           subCategoryId: subCategoryNumber,
         },
