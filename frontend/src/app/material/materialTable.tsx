@@ -136,8 +136,6 @@ const MaterialDeliveryForm: React.FC = () => {
         }))
       );
 
-      console.log("Flattened inventory:", flattened); // ✅ log flattened structure
-
       setInventory(flattened);
       setInventoryList(flattened);
     });
@@ -145,7 +143,7 @@ const MaterialDeliveryForm: React.FC = () => {
 
   const fetchDeliveries = async () => {
     const res = await axios.get("http://localhost:8000/material-delivery");
-    setDeliveryList(res.data);
+    setDeliveryList(res.data.reverse());
   };
 
   useEffect(() => {
@@ -222,6 +220,7 @@ const MaterialDeliveryForm: React.FC = () => {
       alert("Please select a delivery type");
       return;
     }
+
     if (isSaleOrDemo && !formData.customerId) {
       alert("Customer is required for Sale or Demo");
       return;
@@ -254,10 +253,10 @@ const MaterialDeliveryForm: React.FC = () => {
           `http://localhost:8000/material-delivery/${formData.id}`,
           payload
         );
-        alert("Delivery updated!");
+        alert("Delivery updated sucessfully!");
       } else {
         await axios.post("http://localhost:8000/material-delivery", payload);
-        alert("Delivery created!");
+        alert("Delivery created successfully!");
       }
 
       // Reset form and table after successful submission
@@ -374,7 +373,7 @@ const MaterialDeliveryForm: React.FC = () => {
                       ?.toLowerCase()
                       .includes(lowerSearch) ||
                     delivery.materialDeliveryItems
-                      ?.map((item: any) => item.inventory?.serialNumber)
+                      ?.map((item: any) => item.serialNumber)
                       .join(", ")
                       .toLowerCase()
                       .includes(lowerSearch) ||
@@ -392,26 +391,36 @@ const MaterialDeliveryForm: React.FC = () => {
                 .map((delivery) => (
                   <tr key={delivery.id}>
                     <td className="border p-2">{delivery.deliveryType}</td>
-                    <td className="border p-2">{delivery.deliveryChallan}</td>
-                    <td className="border p-2">{delivery.salesOrderNo}</td>
-                    <td className="border p-2">{delivery.quotationNo}</td>
-                    <td className="border p-2">{delivery.purchaseInvoiceNo}</td>
-                    <td className="border p-2">{delivery.refNumber}</td>
+                    <td className="border p-2">
+                      {delivery.deliveryChallan || "No Delivery Challan"}
+                    </td>
+                    <td className="border p-2">
+                      {delivery.salesOrderNo || "No Sales Order No"}
+                    </td>
+                    <td className="border p-2">
+                      {delivery.quotationNo || "No Quotation"}
+                    </td>
+                    <td className="border p-2">
+                      {delivery.purchaseInvoiceNo || "No Invoice"}
+                    </td>
+                    <td className="border p-2">
+                      {delivery.refNumber || "No Ref No"}
+                    </td>
 
                     <td className="border p-2">
-                      {delivery.customer?.customerName || "N/A"}
+                      {delivery.customer?.customerName || "No Customer"}
                     </td>
                     <td className="border p-2">
-                      {delivery.site?.siteName || "N/A"}
+                      {delivery.site?.siteName || "No Sites"}
                     </td>
                     <td className="border p-2">
-                      {delivery.vendor?.vendorName || "N/A"}
+                      {delivery.vendor?.vendorName || "No Vendor"}
                     </td>
 
                     <td className="border p-2">
                       {delivery.materialDeliveryItems
                         ?.map((item: any, idx: number) => item.serialNumber)
-                        .join(", ") || "N/A"}
+                        .join(", ") || "No Serial Number"}
                     </td>
 
                     <td className="border p-2">
@@ -527,9 +536,7 @@ const MaterialDeliveryForm: React.FC = () => {
                       onChange={handleChange}
                       className="border p-1.5 w-72 rounded"
                     >
-                      <option value="">
-                        Select Customer's Site (Optional)
-                      </option>
+                      <option value="">Select Customer's Site</option>
                       {sites.map((site) => (
                         <option key={site.id} value={site.id}>
                           {site.siteName}

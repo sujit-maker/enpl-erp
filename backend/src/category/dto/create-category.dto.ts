@@ -8,7 +8,4 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   categoryId: string;
-
-  
-
 }

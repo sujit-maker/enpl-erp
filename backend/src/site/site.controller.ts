@@ -51,6 +51,37 @@ export class SiteController {
     }
   }
   
+// Update site details
+@Put(':id')
+@UseInterceptors(
+  FileInterceptor('gstpdf', {
+    storage: diskStorage({
+      destination: './uploads/gst-certificates',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype !== 'application/pdf') {
+        return cb(new Error('Only PDF files are allowed'), false);
+      }
+      cb(null, true);
+    },
+  }),
+)
+async update(
+  @Param('id') id: string,
+  @UploadedFile() file: Express.Multer.File,
+  @Body() updateSiteDto: any, // Accept raw body to modify
+) {
+  if (file) {
+    updateSiteDto.gstpdf = file.filename;
+  }
+
+  return this.siteService.update(Number(id), updateSiteDto);
+}
 
 
    // Get sites by customer ID
@@ -75,14 +106,7 @@ export class SiteController {
     return this.siteService.findOne(Number(id));
   }
 
-  // Update site details
-  @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateSiteDto: UpdateSiteDto,
-  ) {
-    return this.siteService.update(Number(id), updateSiteDto);
-  }
+  
 
   // Delete site
   @Delete(':id')

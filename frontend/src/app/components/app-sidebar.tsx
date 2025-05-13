@@ -6,10 +6,9 @@
     BiStoreAlt,
     BiTask,
     BiSolidDashboard,
-    BiServer,
   } from "react-icons/bi";
   import { ChevronDown, ChevronUp, Menu, Settings, X, LogOut } from "lucide-react";
-  import { FaRegAddressBook, FaLock } from "react-icons/fa";
+  import { FaRegAddressBook} from "react-icons/fa";
   import { useAuth } from "../hooks/useAuth";
   import { useRouter } from "next/navigation";
   

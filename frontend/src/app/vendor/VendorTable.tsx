@@ -90,7 +90,7 @@ const VendorTable: React.FC = () => {
 
   const fetchVendors = async () => {
     const response = await axios.get("http://localhost:8000/vendors");
-    setVendors(response.data);
+    setVendors(response.data.reverse());
   };
 
   const filteredVendors = vendors.filter((vendor) =>
@@ -436,6 +436,8 @@ const VendorTable: React.FC = () => {
                     <option value="">Select Business Type</option>
                     <option value="OEM">OEM</option>
                     <option value="ND">ND</option>
+                    <option value="RD">RD</option>
+                    <option value="Stockist">Stockist</option>
                     <option value="Reseller">Reseller</option>
                     <option value="System Integrator">System Integrator</option>
                     <option value="Service Provider">Service Provider</option>
@@ -467,8 +469,6 @@ const VendorTable: React.FC = () => {
                     />
                   ))}
                 </div>
-
-               
 
                 <div className="mt-4">
                   <label className="font-semibold block mb-2">
@@ -569,7 +569,7 @@ const VendorTable: React.FC = () => {
                   {formData.bankDetails.map((bank, i) => (
                     <div
                       key={i}
-                      className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2 items-center"
+                      className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2 items-center"
                     >
                       {Object.keys(emptyBank).map((key) => (
                         <input
@@ -583,7 +583,7 @@ const VendorTable: React.FC = () => {
                       ))}
                       <button
                         onClick={() => removeBank(i)}
-                        className="text-red-600"
+                        className="text-red-800 "
                       >
                         -
                       </button>

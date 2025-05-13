@@ -122,8 +122,9 @@ export class UpdateCustomerDto {
   @Type(() => CustomerContactDto)
   contacts: CustomerContactDto[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CustomerBankDetailDto)
-  bankDetails: CustomerBankDetailDto[];
+@IsOptional()
+@IsArray()
+@ValidateNested({ each: true })
+@Type(() => CustomerBankDetailDto)
+bankDetails?: CustomerBankDetailDto[];
 }

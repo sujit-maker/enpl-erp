@@ -36,7 +36,6 @@ const SubCategoryTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-
   // ✅ Fetch categories for the dropdown
   const fetchCategories = async () => {
     try {
@@ -90,15 +89,24 @@ const SubCategoryTable: React.FC = () => {
 
   // Open Update Modal with selected subcategory details
   const openUpdateModal = (subCategory: SubCategory) => {
-    setSelectedSubCategory(subCategory);
-    setFormData({
-      categoryId: subCategory.category.id,
-      subCategoryName: subCategory.subCategoryName,
-      subCategoryId: subCategory.subCategoryId,
-      subCategorySuffix: subCategory.subCategoryId.split("-")[1] || "", // Extract suffix from subCategoryId
-    });
-    setIsUpdateModalOpen(true);
-  };
+  const fullId = subCategory.subCategoryId;
+  const categoryCode = subCategory.category.categoryId; // e.g., "MATCH"
+  
+  const suffix =
+    fullId.startsWith(`${categoryCode}-`) && fullId.length > categoryCode.length + 1
+      ? fullId.slice(categoryCode.length + 1) // grab only what's after `${categoryCode}-`
+      : "";
+
+  setSelectedSubCategory(subCategory);
+  setFormData({
+    categoryId: subCategory.category.id,
+    subCategoryName: subCategory.subCategoryName,
+    subCategoryId: subCategory.subCategoryId,
+    subCategorySuffix: suffix,
+  });
+  setIsUpdateModalOpen(true);
+};
+
 
   // ✅ Corrected handleSubmit function for creating or updating subcategories
   const handleSubmit = async () => {
@@ -330,8 +338,8 @@ const SubCategoryTable: React.FC = () => {
               {/* Subcategory Code (Suffix) */}
               <div>
                 <label className="block mb-1 font-semibold text-gray-700">
-Manual SubCategory Id 
-               </label>
+                  Manual SubCategory Id
+                </label>
                 <input
                   type="text"
                   placeholder=""

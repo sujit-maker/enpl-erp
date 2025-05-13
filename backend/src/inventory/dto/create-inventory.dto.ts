@@ -37,6 +37,8 @@ export class CreateInventoryDto {
   @IsArray()
   products: {
     productId: number;
+    make: string;
+    model: string;
     serialNumber: string;
     macAddress: string;
     warrantyPeriod: string;

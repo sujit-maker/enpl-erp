@@ -78,10 +78,13 @@ const initialFormState: Customer = {
   bankDetails: [emptyBank],
 };
 
-  const CustomerTable: React.FC = () => {
+const CustomerTable: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [gstpdfFile, setGstPdfFile] = useState<File | null>(null);
+  const [existingGstFileName, setExistingGstFileName] = useState<string | null>(
+    null
+  );
   const [categories, setCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState<Customer>(initialFormState);
 
@@ -154,6 +157,8 @@ const initialFormState: Customer = {
 
   const handleEdit = (customer: Customer) => {
     setFormData(customer);
+    setGstPdfFile(null); // clear any previous selection
+    setExistingGstFileName(customer.gstpdf || null); // save existing file name
     setIsCreateModalOpen(true);
   };
 
@@ -211,11 +216,6 @@ const initialFormState: Customer = {
       return;
     }
 
-    if (validBanks.length === 0) {
-      alert("Add at least one valid bank detail.");
-      return;
-    }
-
     try {
       const form = new FormData();
 
@@ -237,10 +237,10 @@ const initialFormState: Customer = {
       form.append("bankDetails", JSON.stringify(validBanks));
       form.append("products", JSON.stringify(formData.products));
 
-    // Append the GST certificate file with the correct field name
-    if (gstpdfFile) {
-      form.append("gstCertificate", gstpdfFile);
-    }
+      // Append the GST certificate file with the correct field name
+      if (gstpdfFile) {
+        form.append("gstCertificate", gstpdfFile);
+      }
 
       // Create or update
       if (formData.id) {
@@ -257,7 +257,11 @@ const initialFormState: Customer = {
         });
       }
 
-      alert(formData.id ? "Customer updated!" : "Customer created!");
+      alert(
+        formData.id
+          ? "Customer updated successfully!"
+          : "Customer created successfully!"
+      );
       setFormData(initialFormState);
       setGstPdfFile(null);
       setIsCreateModalOpen(false);
@@ -277,7 +281,7 @@ const initialFormState: Customer = {
             setFormData((prev) => ({
               ...initialFormState,
               products: prev.products,
-            })); 
+            }));
           }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
@@ -312,7 +316,7 @@ const initialFormState: Customer = {
                 <td className="p-2 border">
                   {cust.bankDetails
                     .map((b) => `${b.accountNumber} (${b.ifscCode})`)
-                    .join(", ")}
+                    .join(", ") || "No Bank Details"}
                 </td>
                 <td className="p-2 border  text-red-800">
                   {Array.isArray(cust.products)
@@ -388,7 +392,6 @@ const initialFormState: Customer = {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   {[
                     "customerName",
-                    "companyName",
                     "registerAddress",
                     "state",
                     "city",
@@ -403,14 +406,12 @@ const initialFormState: Customer = {
                       key={field}
                       name={field}
                       placeholder={field.replace(/([A-Z])/g, " $1")}
-                     value={((formData as any)[field] || '')}
+                      value={(formData as any)[field] || ""}
                       onChange={(e) => handleInputChange(e, field)}
                       className="border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   ))}
                 </div>
-
-               
 
                 <div className="mt-4">
                   <label className="font-semibold block mb-2">
@@ -423,16 +424,30 @@ const initialFormState: Customer = {
                       const file = e.target.files?.[0];
                       if (file && file.type === "application/pdf") {
                         setGstPdfFile(file);
+                        setExistingGstFileName(null); // hide old name if new file is selected
                       } else {
                         alert("Please upload a valid PDF file.");
                       }
                     }}
                     className="block w-full border p-2 rounded"
                   />
+                  {/* Show newly selected file name */}
                   {gstpdfFile && (
                     <p className="text-sm text-green-700 mt-1">
                       {gstpdfFile.name}
                     </p>
+                  )}
+
+                  {/* Show existing file name from backend if no new file selected */}
+                  {!gstpdfFile && existingGstFileName && (
+                    <a
+                      href={`http://localhost:8000/gst/${existingGstFileName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-700 mt-1 block underline"
+                    >
+                      View Existing GST Certificate
+                    </a>
                   )}
                 </div>
 
@@ -502,16 +517,18 @@ const initialFormState: Customer = {
 
                 {/* Bank Details */}
                 <div className="mt-6">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center  mb-2">
                     <h4 className="font-semibold">Bank Details</h4>
+
                     <button onClick={addBank} className="text-blue-600">
                       <Plus size={20} />
                     </button>
                   </div>
+                  
                   {formData.bankDetails.map((bank, i) => (
                     <div
                       key={i}
-                      className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2 items-center"
+                      className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2 items-center"
                     >
                       {Object.keys(emptyBank).map((key) => (
                         <input

@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PencilLine, Trash2 } from "lucide-react";
+import { PencilLine } from "lucide-react";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
 import { ProductCombobox } from "@/components/ui/ProductCombobox";
 
 interface ProductInventory {
   productId: number;
+  make: string;
+  model: string;
   serialNumber: string;
   macAddress: string;
   warrantyPeriod: string;
@@ -61,12 +63,13 @@ const InventoryTable: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 50;
 
   const paginatedInventory = filteredInventory.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  
   const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
 
   useEffect(() => {
@@ -81,6 +84,8 @@ const InventoryTable: React.FC = () => {
 
   const fetchInventory = async () => {
     const res = await axios.get("http://localhost:8000/inventory");
+    setInventoryList(res.data.reverse());
+
     const inventoryWithDuration = res.data.map((item: Inventory) => {
       const purchaseDate = new Date(item.purchaseDate);
       const today = new Date();
@@ -115,6 +120,9 @@ const InventoryTable: React.FC = () => {
 
       const inventoryMatch =
         inv.purchaseInvoice?.toLowerCase().includes(lowerQuery) ||
+        inv.products.some((product) =>
+          product.serialNumber?.toLowerCase().includes(lowerQuery)
+        ) ||
         inv.purchaseDate?.toLowerCase().includes(lowerQuery) ||
         inv.creditTerms?.toLowerCase().includes(lowerQuery) ||
         inv.invoiceNetAmount?.toLowerCase().includes(lowerQuery) ||
@@ -125,6 +133,12 @@ const InventoryTable: React.FC = () => {
 
       const productMatch = inv.products.some((product) => {
         return (
+          products
+            .find((p) => p.id === product.productId)
+            ?.productName?.toLowerCase()
+            .includes(lowerQuery) ||
+          product.model?.toLowerCase().includes(lowerQuery) ||
+          product.make?.toLowerCase().includes(lowerQuery) ||
           product.serialNumber?.toLowerCase().includes(lowerQuery) ||
           product.macAddress?.toLowerCase().includes(lowerQuery) ||
           product.warrantyPeriod?.toLowerCase().includes(lowerQuery) ||
@@ -154,6 +168,11 @@ const InventoryTable: React.FC = () => {
         updated.dueDate = date.toISOString().split("T")[0]; // format as YYYY-MM-DD
       }
 
+      // Auto-calculate Gross Amount Net Amount + GST Amount
+      const netAmount = parseFloat(updated.invoiceNetAmount || "0") || 0;
+      const gstAmount = parseFloat(updated.gstAmount || "0") || 0;
+      updated.invoiceGrossAmount = (netAmount + gstAmount).toFixed(2);
+
       return updated;
     });
   };
@@ -164,6 +183,8 @@ const InventoryTable: React.FC = () => {
         ...formData,
         products: formData.products.map((product) => ({
           productId: product.productId,
+          make: product.make,
+          model: product.model,
           serialNumber: product.serialNumber,
           macAddress: product.macAddress,
           warrantyPeriod: product.warrantyPeriod,
@@ -176,10 +197,10 @@ const InventoryTable: React.FC = () => {
           `http://localhost:8000/inventory/${formData.id}`,
           payload
         );
-        alert("Inventory updated!");
+        alert("Inventory updated successfully!");
       } else {
         await axios.post("http://localhost:8000/inventory", payload);
-        alert("Inventory created!");
+        alert("Inventory created successfully!");
       }
 
       setFormData(initialFormState);
@@ -190,6 +211,7 @@ const InventoryTable: React.FC = () => {
       alert("Something went wrong!");
     }
   };
+
   const openModal = (data?: Inventory) => {
     if (data) {
       const clonedProducts = (data.products || []).map((p) => ({ ...p }));
@@ -222,16 +244,18 @@ const InventoryTable: React.FC = () => {
         <table className="min-w-[900px] w-full border text-sm">
           <thead className="bg-gray-100 text-center">
             <tr>
-              <th className="p-2 border">Product Name</th>
-              <th className="p-2 border">Serial No</th>
-              <th className="p-2 border">MAC Address</th>
-              <th className="p-2 border">Warranty Period(Days)</th>
-              <th className="p-2 border">Purchase Rate</th>      
-              <th className="p-2 border">Purchased From</th>
-              <th className="p-2 border">Purchased Date</th>
-              <th className="p-2 border">P.Invoice No</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Age</th>
+              <th className="p-2 border text-center">Product Name</th>
+              <th className="p-2 border text-center">Make</th>
+              <th className="p-2 border text-center">Model</th>
+              <th className="p-2 border text-center">Serial No</th>
+              <th className="p-2 border text-center">MAC Address</th>
+              <th className="p-2 border text-center">Warranty Period(Days)</th>
+              <th className="p-2 border text-center">Purchase Rate</th>
+              <th className="p-2 border text-center">Purchased From</th>
+              <th className="p-2 border text-center">Purchased Date</th>
+              <th className="p-2 border text-center">P.Invoice No</th>
+              <th className="p-2 border text-center">Status</th>
+              <th className="p-2 border text-center">Age</th>
               <th className="p-2 border text-center">Actions</th>
             </tr>
           </thead>
@@ -243,11 +267,20 @@ const InventoryTable: React.FC = () => {
                     {products.find((p) => p.id === product.productId)
                       ?.productName || "N/A"}
                   </td>
-                  <td className="p-2 border text-center">{product.serialNumber}</td>
-                  <td className="p-2 border text-center">{product.macAddress}</td>
-                  <td className="p-2 border text-center">{product.warrantyPeriod}</td>
-                  <td className="p-2 border text-center">{product.purchaseRate}</td>
-                 
+                  <td className="p-2 border text-center">{product.make}</td>
+                  <td className="p-2 border text-center">{product.model}</td>
+                  <td className="p-2 border text-center">
+                    {product.serialNumber || "N/A"}
+                  </td>
+                  <td className="p-2 border text-center">
+                    {product.macAddress || "N/A"}
+                  </td>
+                  <td className="p-2 border text-center">
+                    {product.warrantyPeriod}
+                  </td>
+                  <td className="p-2 border text-center">
+                    {product.purchaseRate}
+                  </td>
                   <td className="p-2 border text-center">
                     {vendors.find((v) => v.id === inv.vendorId)?.vendorName}
                   </td>
@@ -264,7 +297,6 @@ const InventoryTable: React.FC = () => {
                     >
                       <PencilLine size={18} />
                     </button>
-                   
                   </td>
                 </tr>
               ))
@@ -304,8 +336,8 @@ const InventoryTable: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0  bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 mt-6 rounded-lg shadow-lg max-w-4xl w-full overflow-y-auto max-h-[90vh]">
             <h2 className="text-xl font-bold mb-4">
               {formData.id ? "Edit Inventory" : "Add Inventory"}
             </h2>
@@ -402,6 +434,7 @@ const InventoryTable: React.FC = () => {
                   value={formData.invoiceGrossAmount}
                   onChange={handleChange}
                   className="border p-2 rounded"
+                  readOnly
                 />
               </div>
             </div>
@@ -428,6 +461,31 @@ const InventoryTable: React.FC = () => {
                       placeholder="Select Product"
                     />
 
+                    <input
+                      type="text"
+                      name="make"
+                      placeholder="Make"
+                      value={product.make}
+                      onChange={(e) => {
+                        const updated = [...formData.products];
+                        updated[index].make = e.target.value;
+                        setFormData({ ...formData, products: updated });
+                      }}
+                      className="border p-2 rounded"
+                    />
+
+                    <input
+                      type="text"
+                      name="model"
+                      placeholder="Model"
+                      value={product.model}
+                      onChange={(e) => {
+                        const updated = [...formData.products];
+                        updated[index].model = e.target.value;
+                        setFormData({ ...formData, products: updated });
+                      }}
+                      className="border p-2 rounded"
+                    />
                     <input
                       type="text"
                       name="serialNumber"
@@ -479,7 +537,6 @@ const InventoryTable: React.FC = () => {
                       }}
                       className="border p-2 rounded"
                     />
-
                     {/* Remove Product Row Button */}
                     <button
                       onClick={() => {
@@ -507,6 +564,8 @@ const InventoryTable: React.FC = () => {
                         ...prev.products,
                         {
                           productId: 0,
+                          make: "",
+                          model: "",
                           serialNumber: "",
                           macAddress: "",
                           warrantyPeriod: "",

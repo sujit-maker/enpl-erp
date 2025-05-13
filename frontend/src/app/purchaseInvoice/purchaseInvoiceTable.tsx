@@ -21,6 +21,8 @@ interface Inventory {
   invoiceNetAmount?: string;
   gstAmount?: string;
   dueDate?: string;
+  paidAmount?: string;
+  dueAmount?: string;
   invoiceGrossAmount?: string;
   purchaseDate: string;
   purchaseInvoice: string;
@@ -45,6 +47,8 @@ const initialFormState: Inventory = {
   purchaseInvoice: "",
   status: "In Stock",
   dueDate: "",
+  paidAmount: "0",
+  dueAmount: "",
   creditTerms: "",
   invoiceNetAmount: "",
   gstAmount: "",
@@ -56,6 +60,7 @@ const PurchaseInvoiceTable: React.FC = () => {
   const [inventoryList, setInventoryList] = useState<Inventory[]>([]);
   const [filteredInventory, setFilteredInventory] = useState<Inventory[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorPayments, setVendorPayments] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [formData, setFormData] = useState<Inventory>(initialFormState);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,8 +75,8 @@ const PurchaseInvoiceTable: React.FC = () => {
   const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
 
   useEffect(() => {
-    fetchInventory();
     fetchProducts();
+    fetchData();
     fetchVendors();
   }, []);
 
@@ -79,20 +84,58 @@ const PurchaseInvoiceTable: React.FC = () => {
     handleSearch(searchQuery);
   }, [inventoryList, searchQuery]);
 
-  const fetchInventory = async () => {
-    const res = await axios.get("http://localhost:8000/inventory");
-    const inventoryWithDuration = res.data.map((item: Inventory) => {
-      const purchaseDate = new Date(item.purchaseDate);
-      const today = new Date();
-      const diffDays = Math.floor(
-        (today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      return {
-        ...item,
-        duration: `${diffDays} day${diffDays !== 1 ? "s" : ""}`,
-      };
-    });
-    setInventoryList(inventoryWithDuration);
+  useEffect(() => {
+    fetchData();
+    fetchProducts();
+    fetchVendors();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [inventoryRes, paymentsRes] = await Promise.all([
+        axios.get("http://localhost:8000/inventory"),
+        axios.get("http://localhost:8000/vendor-payment"),
+      ]);
+
+      const vendorPaymentsData = paymentsRes.data || [];
+
+      const inventoryWithDuration = inventoryRes.data.map((item: Inventory) => {
+        const purchaseDate = new Date(item.purchaseDate);
+        const today = new Date();
+        const diffDays = Math.floor(
+          (today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        const matchingPayments = vendorPaymentsData.filter(
+          (vp: any) => vp.purchaseInvoiceNo === item.purchaseInvoice
+        );
+
+        let latestDueAmount = parseFloat(item.invoiceGrossAmount || "0");
+
+        if (matchingPayments.length > 0) {
+          matchingPayments.sort(
+            (a: any, b: any) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+          latestDueAmount = parseFloat(matchingPayments[0].balanceDue || "0");
+        }
+
+        const grossAmount = parseFloat(item.invoiceGrossAmount || "0");
+        const paidAmount = (grossAmount - latestDueAmount).toFixed(2);
+
+        return {
+          ...item,
+          duration: `${diffDays} day${diffDays !== 1 ? "s" : ""}`,
+          dueAmount: latestDueAmount.toFixed(2),
+          paidAmount: paidAmount,
+        };
+      });
+
+      setVendorPayments(vendorPaymentsData);
+      setInventoryList(inventoryWithDuration);
+    } catch (error) {
+      console.error("Failed to fetch inventory and vendor payments", error);
+    }
   };
 
   const fetchProducts = async () => {
@@ -135,7 +178,15 @@ const PurchaseInvoiceTable: React.FC = () => {
       return inventoryMatch || productMatch;
     });
 
-    setFilteredInventory(filtered);
+    // ✅ Deduplicate based on purchaseInvoice
+    const uniqueMap = new Map();
+    filtered.forEach((item) => {
+      if (!uniqueMap.has(item.purchaseInvoice)) {
+        uniqueMap.set(item.purchaseInvoice, item);
+      }
+    });
+
+    setFilteredInventory(Array.from(uniqueMap.values()));
   };
 
   const handleChange = (
@@ -154,11 +205,20 @@ const PurchaseInvoiceTable: React.FC = () => {
         updated.dueDate = date.toISOString().split("T")[0]; // format as YYYY-MM-DD
       }
 
+      const gross = parseFloat(updated.invoiceGrossAmount || "0");
+      const paid = parseFloat(updated.paidAmount || "0");
+      updated.dueAmount = (gross - paid).toFixed(2);
+
       return updated;
     });
   };
 
   const handleSave = async () => {
+    if (!formData.purchaseInvoice || !formData.purchaseDate) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
@@ -184,7 +244,7 @@ const PurchaseInvoiceTable: React.FC = () => {
 
       setFormData(initialFormState);
       setIsModalOpen(false);
-      fetchInventory();
+      fetchData();
     } catch (err) {
       console.error("Save error:", err);
       alert("Something went wrong!");
@@ -194,7 +254,7 @@ const PurchaseInvoiceTable: React.FC = () => {
   const handleDelete = async (id?: number) => {
     if (!id || !confirm("Delete this inventory item?")) return;
     await axios.delete(`http://localhost:8000/inventory/${id}`);
-    fetchInventory();
+    fetchData();
   };
 
   const openModal = (data?: Inventory) => {
@@ -209,61 +269,89 @@ const PurchaseInvoiceTable: React.FC = () => {
 
   return (
     <div className="flex-1 p-4 lg:ml-72 mt-20">
-    
+      <div className="mb-4 flex justify-end">
+        <input
+          type="text"
+          placeholder="Search invoices, vendors ..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border p-2 rounded w-full md:w-1/3"
+        />
+      </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-[900px] w-full border text-sm">
           <thead className="bg-gray-100 text-center">
             <tr>
-                  
-              <th className="p-2 border">Purchased From</th>
               <th className="p-2 border">Purchased Date</th>
               <th className="p-2 border">P.Invoice No</th>
-              <th className="p-2 border">Credit Terms </th>
+              <th className="p-2 border">Purchased From</th>
               <th className="p-2 border">Invoice Amount</th>
               <th className="p-2 border">GST Amount</th>
               <th className="p-2 border">Gross Amount</th>
+              <th className="p-2 border">Credit Terms </th>
               <th className="p-2 border">Due Date</th>
+              <th className="p-2 border">Paid Amount</th>
+              <th className="p-2 border">Due Amount</th>
               <th className="p-2 border">Status</th>
               <th className="p-2 border">Age</th>
               <th className="p-2 border">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedInventory.map((inv) =>
-              inv.products.map((product, index) => (
-                <tr key={`${inv.id}-${product.serialNumber}-${index}`}>
-                  <td className="p-2 border text-center">
-                    {vendors.find((v) => v.id === inv.vendorId)?.vendorName}
-                  </td>
-                  <td className="p-2 border text-center">
-                    {inv.purchaseDate?.slice(0, 10)}
-                  </td>
-                  <td className="p-2 border text-center ">{inv.purchaseInvoice}</td>
-                  <td className="p-2 border text-center">{inv.creditTerms}</td>
-                  <td className="p-2 border text-center">{inv.invoiceNetAmount}</td>
-                  <td className="p-2 border text-center">{inv.gstAmount}</td>
-                  <td className="p-2 border text-center">{inv.invoiceGrossAmount}</td>
-                  <td className="p-2 border text-center">{inv.dueDate?.slice(0, 10)}</td>
-                  <td className="p-2 border text-center">{inv.status}</td>
-                  <td className="p-2 border text-center">{inv.duration}</td>
-                   <td className="p-2 border text-center space-x-2">
-                    <button
-                      onClick={() => openModal(inv)}
-                      className="text-blue-600"
-                    >
-                      <PencilLine size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(inv.id)}
-                      className="text-red-600"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            {paginatedInventory.map((inv) => (
+              <tr key={inv.id}>
+                <td className="p-2 border text-center">
+                  {inv.purchaseDate?.slice(0, 10)}
+                </td>
+                <td className="p-2 border text-center">
+                  {inv.purchaseInvoice}
+                </td>
+                <td className="p-2 border text-center">
+                  {vendors.find((v) => v.id === inv.vendorId)?.vendorName}
+                </td>
+                <td className="p-2 border text-center">
+                  {inv.invoiceNetAmount}
+                </td>
+                <td className="p-2 border text-center">{inv.gstAmount}</td>
+                <td className="p-2 border text-center">
+                  {inv.invoiceGrossAmount}
+                </td>
+                <td className="p-2 border text-center">{inv.creditTerms}</td>
+
+                <td className="p-2 border text-center">
+                  {inv.dueDate?.slice(0, 10)}
+                </td>
+                <td className="p-2 border text-center">
+                  {inv.paidAmount || "0"}
+                </td>
+                <td className="p-2 border text-center">{inv.dueAmount}</td>
+                <td className="p-2 border text-center">
+                  {parseFloat(inv.dueAmount || "0") === 0
+                    ? "Full Paid"
+                    : parseFloat(inv.dueAmount || "0") ===
+                      parseFloat(inv.invoiceGrossAmount || "0")
+                    ? "Unpaid"
+                    : "Partly Paid"}
+                </td>
+                <td className="p-2 border text-center">{inv.duration}</td>
+
+                <td className="p-2 border text-center space-x-2">
+                  <button
+                    onClick={() => openModal(inv)}
+                    className="text-blue-600"
+                  >
+                    <PencilLine size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(inv.id)}
+                    className="text-red-600"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
