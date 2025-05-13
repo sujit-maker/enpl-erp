@@ -34,7 +34,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/category");
+        const response = await axios.get("http://128.199.19.28:8000/category");
         setCategories(response.data);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -69,7 +69,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
         categoryId: parseInt(categoryId, 10),
         subCategoryId: parseInt(subCategoryId, 10),
       };
-      await axios.post("http://localhost:8000/products", newProduct);
+      await axios.post("http://128.199.19.28:8000/products", newProduct);
       fetchProducts();
       resetForm();
       onHide();

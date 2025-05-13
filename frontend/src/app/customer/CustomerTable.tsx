@@ -86,13 +86,13 @@ const initialFormState: Customer = {
   const [formData, setFormData] = useState<Customer>(initialFormState);
 
   const fetchCustomers = async () => {
-    const res = await axios.get("http://localhost:8000/customers");
+    const res = await axios.get("http://128.199.19.28:8000/customers");
     setCustomers(res.data);
   };
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/category");
+      const response = await axios.get("http://128.199.19.28:8000/category");
       const names = response.data.map((c: any) => c.categoryName);
       setCategories(names);
     } catch (error) {
@@ -164,7 +164,7 @@ const initialFormState: Customer = {
     );
     if (!confirm) return;
     try {
-      await axios.delete(`http://localhost:8000/customers/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/customers/${id}`);
       alert("Customer deleted successfully!");
       fetchCustomers();
     } catch (err) {
@@ -245,14 +245,14 @@ const initialFormState: Customer = {
       // Create or update
       if (formData.id) {
         await axios.put(
-          `http://localhost:8000/customers/${formData.id}`,
+          `http://128.199.19.28:8000/customers/${formData.id}`,
           form,
           {
             headers: { "Content-Type": "multipart/form-data" },
           }
         );
       } else {
-        await axios.post("http://localhost:8000/customers", form, {
+        await axios.post("http://128.199.19.28:8000/customers", form, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
@@ -323,7 +323,7 @@ const initialFormState: Customer = {
                 <td className="p-2 border text-blue-900">
                   {cust.gstpdf ? (
                     <a
-                      href={`http://localhost:8000/gst/${cust.gstpdf}`}
+                      href={`http://128.199.19.28:8000/gst/${cust.gstpdf}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

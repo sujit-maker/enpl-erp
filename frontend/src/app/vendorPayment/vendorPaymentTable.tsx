@@ -77,12 +77,12 @@ const VendorPaymentTable: React.FC = () => {
   }, []);
 
   const fetchPayments = async () => {
-    const res = await axios.get("http://localhost:8000/vendor-payment");
+    const res = await axios.get("http://128.199.19.28:8000/vendor-payment");
     setPayments(res.data);
   };
 
   const fetchVendors = async () => {
-    const res = await axios.get("http://localhost:8000/vendors");
+    const res = await axios.get("http://128.199.19.28:8000/vendors");
     setVendors(res.data);
   };
 
@@ -97,12 +97,12 @@ const VendorPaymentTable: React.FC = () => {
     try {
       if (formData.id) {
         await axios.put(
-          `http://localhost:8000/vendor-payment/${formData.id}`,
+          `http://128.199.19.28:8000/vendor-payment/${formData.id}`,
           formData
         );
         alert("Payment updated!");
       } else {
-        await axios.post("http://localhost:8000/vendor-payment", formData);
+        await axios.post("http://128.199.19.28:8000/vendor-payment", formData);
         alert("Payment added!");
       }
       setFormData(initialFormState);
@@ -120,7 +120,7 @@ const VendorPaymentTable: React.FC = () => {
     );
     if (confirmed) {
       try {
-        await axios.delete(`http://localhost:8000/vendor-payment/${id}`);
+        await axios.delete(`http://128.199.19.28:8000/vendor-payment/${id}`);
         alert("Payment deleted!");
         fetchPayments(); // Refresh the table after deletion
       } catch (err) {
@@ -261,7 +261,7 @@ const VendorPaymentTable: React.FC = () => {
     setFormData((prev) => ({ ...prev, vendorId: val }));
 
     try {
-      const res = await axios.get(`http://localhost:8000/inventory?vendorId=${val}`);
+      const res = await axios.get(`http://128.199.19.28:8000/inventory?vendorId=${val}`);
       if (res.data && res.data.length > 0) {
         // pick the latest invoice, or however you want
         const latestInvoice = res.data[0]; 
