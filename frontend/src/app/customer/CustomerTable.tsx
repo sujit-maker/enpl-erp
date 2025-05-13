@@ -441,7 +441,7 @@ const CustomerTable: React.FC = () => {
                   {/* Show existing file name from backend if no new file selected */}
                   {!gstpdfFile && existingGstFileName && (
                     <a
-                      href={`http://localhost:8000/gst/${existingGstFileName}`}
+                      href={`http://128.199.19.28:8000/gst/${existingGstFileName}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-blue-700 mt-1 block underline"

@@ -142,7 +142,7 @@ const MaterialDeliveryForm: React.FC = () => {
   }, []);
 
   const fetchDeliveries = async () => {
-    const res = await axios.get("http://localhost:8000/material-delivery");
+    const res = await axios.get("http://128.199.19.28:8000/material-delivery");
     setDeliveryList(res.data.reverse());
   };
 
@@ -255,7 +255,7 @@ const MaterialDeliveryForm: React.FC = () => {
         );
         alert("Delivery updated sucessfully!");
       } else {
-        await axios.post("http://localhost:8000/material-delivery", payload);
+        await axios.post("http://128.199.19.28:8000/material-delivery", payload);
         alert("Delivery created successfully!");
       }
 

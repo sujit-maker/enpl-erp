@@ -93,8 +93,8 @@ const PurchaseInvoiceTable: React.FC = () => {
   const fetchData = async () => {
     try {
       const [inventoryRes, paymentsRes] = await Promise.all([
-        axios.get("http://localhost:8000/inventory"),
-        axios.get("http://localhost:8000/vendor-payment"),
+        axios.get("http://128.199.19.28:8000/inventory"),
+        axios.get("http://128.199.19.28:8000/vendor-payment"),
       ]);
 
       const vendorPaymentsData = paymentsRes.data || [];
@@ -253,7 +253,7 @@ const PurchaseInvoiceTable: React.FC = () => {
 
   const handleDelete = async (id?: number) => {
     if (!id || !confirm("Delete this inventory item?")) return;
-    await axios.delete(`http://localhost:8000/inventory/${id}`);
+    await axios.delete(`http://128.199.19.28:8000/inventory/${id}`);
     fetchData();
   };
 

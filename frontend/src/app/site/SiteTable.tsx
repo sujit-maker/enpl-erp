@@ -212,7 +212,7 @@ const SiteTable: React.FC = () => {
 
   try {
     await axios.put(
-      `http://localhost:8000/sites/${selectedSite.id}`,
+      `http://128.199.19.28:8000/sites/${selectedSite.id}`,
       data,
       {
         headers: {

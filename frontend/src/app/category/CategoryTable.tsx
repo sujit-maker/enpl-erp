@@ -80,7 +80,7 @@ const CategoryTable: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-     await axios.put(`http://localhost:8000/category/${selectedCategory.id}`, {
+     await axios.put(`http://128.199.19.28:8000/category/${selectedCategory.id}`, {
   categoryName: formData.categoryName,
   categoryId: String(formData.categoryId), // ensure it's a string
   subCategories: formData.subCategories,

@@ -89,7 +89,7 @@ const VendorTable: React.FC = () => {
   const itemsPerPage = 5;
 
   const fetchVendors = async () => {
-    const response = await axios.get("http://localhost:8000/vendors");
+    const response = await axios.get("http://128.199.19.28:8000/vendors");
     setVendors(response.data.reverse());
   };
 

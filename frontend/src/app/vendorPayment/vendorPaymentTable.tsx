@@ -81,7 +81,7 @@ const VendorPaymentTable: React.FC = () => {
 
   const fetchPayments = async () => {
 
-    const res = await axios.get("http://localhost:8000/vendor-payment");
+    const res = await axios.get("http://128.199.19.28:8000/vendor-payment");
     setPayments(res.data.reverse());
   };
 
@@ -121,7 +121,7 @@ const VendorPaymentTable: React.FC = () => {
         alert("Payment updated sucessfully!");
       } else {
 
-        await axios.post("http://localhost:8000/vendor-payment", formData);
+        await axios.post("http://128.199.19.28:8000/vendor-payment", formData);
         alert("Payment added successfully!");
       }
       setFormData(initialFormState);
@@ -290,7 +290,7 @@ const VendorPaymentTable: React.FC = () => {
                     setFormData((prev) => ({ ...prev, vendorId: val }));
                     try {
                       const res = await axios.get(
-                        `http://localhost:8000/inventory?vendorId=${val}`
+                        `http://128.199.19.28:8000/inventory?vendorId=${val}`
                       );
                       if (res.data && res.data.length > 0) {
                         setVendorInvoices(res.data);
