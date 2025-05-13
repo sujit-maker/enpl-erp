@@ -18,6 +18,10 @@ export class CreateVendorPaymentDto {
   @IsString()
   paidAmount: string;
 
+  @IsOptional()
+  @IsString()
+  balanceDue: string;
+
   @IsDateString()
   paymentDate: string;
 

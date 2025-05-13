@@ -50,13 +50,13 @@ export class CategoryService {
 
   
   async updateCategory(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const { categoryName} = updateCategoryDto;
+    const { categoryId, categoryName} = updateCategoryDto;
   
     return this.prisma.category.update({
       where: { id },
       data: {
         categoryName,
-        categoryId: id.toString(), // Ensure categoryId is a string
+        categoryId, // Ensure categoryId is a string
         subCategories: {
           deleteMany: {}, // Remove all existing subcategories
         },

@@ -152,6 +152,8 @@ model ProductInventory {
   id              Int       @id @default(autoincrement())
   inventoryId     Int
   productId       Int
+ make             String
+  model            String
   serialNumber    String
   macAddress      String
   warrantyPeriod  String
@@ -218,6 +220,7 @@ model BankDetail {
   ifscCode      String
   branchName    String
   vendorId      Int
+  customerId   Int
   vendor        Vendor @relation("VendorBankDetails", fields: [vendorId], references: [id], onDelete: Cascade)
 }
 
@@ -262,6 +265,7 @@ model Customer {
   updatedAt        DateTime           @updatedAt
 
   contacts         CustomerContact[]    @relation("CustomerContacts")
+
   bankDetails      CustomerBankDetail[] @relation("CustomerBankDetails")
   serviceContracts ServiceContracts[]
 }
@@ -359,6 +363,7 @@ model VendorPayment{
   invoiceGrossAmount String
   dueAmount       String
   paidAmount     String
+  balanceDue      String?
   paymentDate    DateTime
   paymentType String
   referenceNo String

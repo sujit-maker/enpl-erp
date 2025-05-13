@@ -7,32 +7,51 @@ import { UpdateSiteDto } from './dto/update-site.dto';
 export class SiteService {
   constructor(private prisma: PrismaService) {}
 
-  // Create a Site with auto-incrementing siteCode
-async create(createSiteDto: CreateSiteDto, customerId: number) {
-  // Get the last site created to get the highest current siteCode
+ async create(createSiteDto: CreateSiteDto, customerId: number) {
+  // 1. Get the customer to retrieve customerCode
+  const customer = await this.prisma.customer.findUnique({
+    where: { id: customerId },
+    select: { customerCode: true },
+  });
+
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  const customerCode = customer.customerCode; // e.g., ENPL-CUS-0525-00001
+
+  // 2. Find the highest siteCode for this customer
   const lastSite = await this.prisma.site.findFirst({
+    where: {
+      customerId: customerId,
+      siteCode: {
+        startsWith: `${customerCode}-S`, // Ensure it's specific to this customer
+      },
+    },
     orderBy: {
-      siteCode: 'desc', // Order by siteCode in descending order to get the last one
+      siteCode: 'desc',
     },
     select: {
-      siteCode: true, // Only retrieve the siteCode
+      siteCode: true,
     },
   });
 
-  // Extract the numeric part from the last siteCode (assuming the format is "EN-CAS-001")
-  let nextSiteNumber = 1; // Default if no site exists yet
-  if (lastSite && lastSite.siteCode) {
-    const lastNumber = lastSite.siteCode.split('-')[2]; // Split and get the number part
-    nextSiteNumber = parseInt(lastNumber, 10) + 1; // Increment the number
+  // 3. Determine next site serial
+  let nextSiteNumber = 1;
+  if (lastSite?.siteCode) {
+    const lastSerial = lastSite.siteCode.split('-S')[1]; // e.g., '00005'
+    if (lastSerial) {
+      nextSiteNumber = parseInt(lastSerial, 10) + 1;
+    }
   }
 
-  // Format the next siteCode (e.g., "ENPL-CUS-MMYY-001")
-  const nextsiteCode = `ENPL-CUS-MMYY-${String(nextSiteNumber).padStart(3, '0')}`; // Updated format
+  // 4. Construct new siteCode
+  const nextSiteCode = `${customerCode}-S${String(nextSiteNumber).padStart(5, '0')}`;
 
-  // Create the site with the newly generated siteCode
+  // 5. Create the new site with generated siteCode
   return this.prisma.site.create({
     data: {
-      siteCode: nextsiteCode,
+      siteCode: nextSiteCode,
       siteName: createSiteDto.siteName,
       siteAddress: createSiteDto.siteAddress,
       contactName: createSiteDto.contactName,
@@ -43,16 +62,12 @@ async create(createSiteDto: CreateSiteDto, customerId: number) {
       gstNo: createSiteDto.gstNo,
       gstpdf: createSiteDto.gstpdf,
       Customer: {
-        connect: {
-          id: Number(customerId) // safely convert string to number
-        }
-      }
-      
-      
+        connect: { id: customerId },
+      },
     },
   });
-  
 }
+
 
   
 

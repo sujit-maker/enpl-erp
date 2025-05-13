@@ -57,12 +57,7 @@ const SiteTable: React.FC = () => {
     emailId: [""],
     customerId: 0,
   });
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    setGstPdfFile(file);
-  };
-
+  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -194,23 +189,48 @@ const SiteTable: React.FC = () => {
     }
   };
 
-  const handleUpdate = async () => {
-    if (selectedSite) {
-      try {
-        await axios.put(
-          `http://128.199.19.28:8000/sites/${selectedSite.id}`,
-          formData
-        );
-        alert("Site updated successfully!");
-        setIsUpdateModalOpen(false);
-        setGstPdfFile(null); // Reset GST PDF after submission
+ const handleUpdate = async () => {
+  if (!selectedSite) return;
 
-        fetchSites();
-      } catch (error) {
-        console.error("Error updating site:", error);
-      }
+  const data = new FormData();
+
+  for (const key in formData) {
+    const value = (formData as any)[key];
+
+    if (Array.isArray(value)) {
+      value.forEach((v: string) => {
+        data.append(`${key}[]`, v);
+      });
+    } else if (value !== null && value !== undefined) {
+      data.append(key, value);
     }
-  };
+  }
+
+  if (gstPdfFile) {
+    data.append("gstpdf", gstPdfFile, gstPdfFile.name);
+  }
+
+  try {
+    await axios.put(
+      `http://localhost:8000/sites/${selectedSite.id}`,
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    alert("Site updated successfully!");
+    setIsUpdateModalOpen(false);
+    setGstPdfFile(null);
+    fetchSites();
+  } catch (error) {
+    console.error("Error updating site:", error);
+    alert("Failed to update site.");
+  }
+};
+
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this site?")) {

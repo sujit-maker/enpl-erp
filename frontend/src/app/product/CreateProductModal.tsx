@@ -71,6 +71,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
       };
       await axios.post("http://128.199.19.28:8000/products", newProduct);
       fetchProducts();
+      alert("Product created successfully");
       resetForm();
       onHide();
     } catch (error) {

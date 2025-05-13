@@ -4,6 +4,7 @@ export class UpdateInventoryDto {
   @IsOptional()
   @IsNumber()
   vendorId?: number;
+ 
 
   @IsOptional()
   @IsDate()
@@ -45,6 +46,8 @@ export class UpdateInventoryDto {
   @IsArray()
   products?: {
     productId: number;
+    make: string;
+    model: string;
     serialNumber: string;
     macAddress: string;
     warrantyPeriod: string;

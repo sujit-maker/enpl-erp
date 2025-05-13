@@ -2,21 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PencilLine, Trash } from "lucide-react"; // Added Trash icon for delete
+import { PencilLine, Trash } from "lucide-react";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
 
 interface Vendor {
   id: number;
   vendorName: string;
 }
-
-interface VendorPayment {
+ 
+  interface VendorPayment {
   id?: number;
   vendorId: number;
   purchaseInvoiceNo: string;
   invoiceGrossAmount: string;
   dueAmount: string;
   paidAmount: string;
+  balanceDue?: string;
   paymentDate: string;
   referenceNo: string;
   paymentType: string;
@@ -31,6 +32,7 @@ const initialFormState: VendorPayment = {
   invoiceGrossAmount: "",
   dueAmount: "",
   paidAmount: "",
+  balanceDue: "",
   paymentType: "",
   referenceNo: "",
   remark: "",
@@ -42,6 +44,7 @@ const initialFormState: VendorPayment = {
 const VendorPaymentTable: React.FC = () => {
   const [payments, setPayments] = useState<VendorPayment[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorInvoices, setVendorInvoices] = useState<any[]>([]);
   const [formData, setFormData] = useState<VendorPayment>(initialFormState);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,8 +80,9 @@ const VendorPaymentTable: React.FC = () => {
   }, []);
 
   const fetchPayments = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/vendor-payment");
-    setPayments(res.data);
+
+    const res = await axios.get("http://localhost:8000/vendor-payment");
+    setPayments(res.data.reverse());
   };
 
   const fetchVendors = async () => {
@@ -90,7 +94,21 @@ const VendorPaymentTable: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // If the field being updated is 'paidAmount', calculate balanceDue
+    if (name === "paidAmount") {
+      const paid = parseFloat(value || "0");
+      const due = parseFloat(formData.dueAmount || "0");
+      const balance = due - paid;
+
+      setFormData((prev) => ({
+        ...prev,
+        paidAmount: value,
+        balanceDue: balance.toFixed(2),
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -100,10 +118,11 @@ const VendorPaymentTable: React.FC = () => {
           `http://128.199.19.28:8000/vendor-payment/${formData.id}`,
           formData
         );
-        alert("Payment updated!");
+        alert("Payment updated sucessfully!");
       } else {
-        await axios.post("http://128.199.19.28:8000/vendor-payment", formData);
-        alert("Payment added!");
+
+        await axios.post("http://localhost:8000/vendor-payment", formData);
+        alert("Payment added successfully!");
       }
       setFormData(initialFormState);
       setIsModalOpen(false);
@@ -122,7 +141,7 @@ const VendorPaymentTable: React.FC = () => {
       try {
         await axios.delete(`http://128.199.19.28:8000/vendor-payment/${id}`);
         alert("Payment deleted!");
-        fetchPayments(); // Refresh the table after deletion
+        fetchPayments(); 
       } catch (err) {
         console.error(err);
         alert("Error deleting payment");
@@ -165,6 +184,7 @@ const VendorPaymentTable: React.FC = () => {
               <th className="p-2 border">Gross Amount</th>
               <th className="p-2 border">Due Amount</th>
               <th className="p-2 border">Paid Amount</th>
+              <th className="p-2 border">Balance Due</th>
               <th className="p-2 border">Payment Mode</th>
               <th className="p-2 border">Remarks</th>
               <th className="p-2 border">Purchase Invoice</th>
@@ -175,21 +195,30 @@ const VendorPaymentTable: React.FC = () => {
             {paginated.map((p) => (
               <tr key={p.id}>
                 <td className="p-2 border text-center">
-                  {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "N/A"}
+                  {p.createdAt
+                    ? new Date(p.createdAt).toLocaleDateString()
+                    : "N/A"}
                 </td>
                 <td className="p-2 border text-center">
                   {vendors.find((v) => v.id === p.vendorId)?.vendorName ||
                     "N/A"}
                 </td>
-                <td className="p-2 border text-center">{p.paymentDate}</td>
-                <td className="p-2 border text-center">{p.referenceNo}</td>
+                <td className="p-2 border text-center">
+                  {new Date(p.paymentDate).toLocaleDateString("en-GB")}
+                </td>
+                <td className="p-2 border text-center">
+                  {p.referenceNo || "N/A"}
+                </td>
                 <td className="p-2 border text-center">
                   {p.invoiceGrossAmount}
                 </td>
                 <td className="p-2 border text-center">{p.dueAmount}</td>
                 <td className="p-2 border text-center">{p.paidAmount}</td>
+                <td className="p-2 border text-center">
+                  {p.balanceDue || "N/A"}
+                </td>
                 <td className="p-2 border text-center">{p.paymentType}</td>
-                <td className="p-2 border text-center">{p.remark}</td>
+                <td className="p-2 border text-center">{p.remark || "N/A"}</td>
                 <td className="p-2 border text-center">
                   {p.purchaseInvoiceNo}
                 </td>
@@ -201,7 +230,7 @@ const VendorPaymentTable: React.FC = () => {
                     <PencilLine size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(p.id!)} // Ensure non-null id
+                    onClick={() => handleDelete(p.id!)} 
                     className="text-red-600"
                   >
                     <Trash size={18} />
@@ -255,50 +284,124 @@ const VendorPaymentTable: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="font-semibold mb-1 block">Vendor</label>
-               <VendorCombobox
-  selectedValue={formData.vendorId}
-  onSelect={async (val) => {
-    setFormData((prev) => ({ ...prev, vendorId: val }));
+                <VendorCombobox
+                  selectedValue={formData.vendorId}
+                  onSelect={async (val) => {
+                    setFormData((prev) => ({ ...prev, vendorId: val }));
+                    try {
+                      const res = await axios.get(
+                        `http://localhost:8000/inventory?vendorId=${val}`
+                      );
+                      if (res.data && res.data.length > 0) {
+                        setVendorInvoices(res.data);
 
-    try {
-      const res = await axios.get(`http://128.199.19.28:8000/inventory?vendorId=${val}`);
-      if (res.data && res.data.length > 0) {
-        // pick the latest invoice, or however you want
-        const latestInvoice = res.data[0]; 
-        setFormData((prev) => ({
-          ...prev,
-          purchaseInvoiceNo: latestInvoice.purchaseInvoice || "",
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          purchaseInvoiceNo: "",
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to fetch inventory", err);
-      setFormData((prev) => ({
-        ...prev,
-        purchaseInvoiceNo: "",
-      }));
-    }
-  }}
-  placeholder="Select Vendor"
-/>
+                        const firstInvoice = res.data[0];
+                        const invoiceNo = firstInvoice.purchaseInvoice;
+                        const invoiceGrossAmount = parseFloat(
+                          firstInvoice.invoiceGrossAmount || "0"
+                        );
 
+                        // Find previous payments for this invoice
+                        const previousPayments = payments.filter(
+                          (p) => p.purchaseInvoiceNo === invoiceNo
+                        );
+                        const totalPaid = previousPayments.reduce(
+                          (sum, p) => sum + parseFloat(p.paidAmount || "0"),
+                          0
+                        );
+
+                        const dueAmount = invoiceGrossAmount - totalPaid;
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          purchaseInvoiceNo: invoiceNo,
+                          invoiceGrossAmount: firstInvoice.invoiceGrossAmount,
+                          dueAmount: dueAmount.toFixed(2),
+                        }));
+                      } else {
+                        setVendorInvoices([]);
+                        setFormData((prev) => ({
+                          ...prev,
+                          purchaseInvoiceNo: "",
+                          invoiceGrossAmount: "",
+                          dueAmount: "",
+                        }));
+                      }
+                    } catch (err) {
+                      console.error("Failed to fetch inventory", err);
+                      setVendorInvoices([]);
+                      setFormData((prev) => ({
+                        ...prev,
+                        purchaseInvoiceNo: "",
+                        invoiceGrossAmount: "",
+                        dueAmount: "",
+                      }));
+                    }
+                  }}
+                  placeholder="Select Vendor"
+                />
               </div>
 
               <div>
-  <label className="font-semibold mb-1 block">Purchase Invoice</label>
-  <input
-    type="text"
-    name="purchaseInvoiceNo"
-    value={formData.purchaseInvoiceNo}
-    readOnly
-    className="border p-2 rounded w-full bg-gray-100"
-  />
-</div>
+                <label className="font-semibold mb-1 block">
+                  Purchase Invoice
+                </label>
 
+                <select
+                  className="border p-2 rounded w-full"
+                  name="purchaseInvoiceNo"
+                  value={formData.purchaseInvoiceNo}
+                  onChange={(e) => {
+                    const selectedInvoiceNo = e.target.value;
+
+                    const selectedInvoice = vendorInvoices.find(
+                      (inv) => inv.purchaseInvoice === selectedInvoiceNo
+                    );
+
+                    if (selectedInvoice) {
+                      const invoiceGross = parseFloat(
+                        selectedInvoice.invoiceGrossAmount || "0"
+                      );
+
+                      // Find previous payments for this invoice
+                      const matchingPayments = payments.filter(
+                        (p) => p.purchaseInvoiceNo === selectedInvoiceNo
+                      );
+
+                      const totalPaid = matchingPayments.reduce(
+                        (sum, p) => sum + parseFloat(p.paidAmount || "0"),
+                        0
+                      );
+
+                      const newDue = invoiceGross - totalPaid;
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        purchaseInvoiceNo: selectedInvoiceNo,
+                        invoiceGrossAmount: selectedInvoice.invoiceGrossAmount,
+                        dueAmount: newDue.toFixed(2),
+                      }));
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        purchaseInvoiceNo: selectedInvoiceNo,
+                        invoiceGrossAmount: "",
+                        dueAmount: "",
+                      }));
+                    }
+                  }}
+                >
+                  <option value="">Select Invoice</option>
+                  {vendorInvoices.map((inv) => (
+                    <option
+                      key={inv.purchaseInvoice}
+                      value={inv.purchaseInvoice}
+                    >
+                      {inv.purchaseInvoice}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div>
                 <label className="font-semibold mb-1 block">
@@ -309,6 +412,7 @@ const VendorPaymentTable: React.FC = () => {
                   name="invoiceGrossAmount"
                   value={formData.invoiceGrossAmount}
                   onChange={handleChange}
+                  readOnly
                   className="border p-2 rounded w-full"
                 />
               </div>
@@ -369,6 +473,17 @@ const VendorPaymentTable: React.FC = () => {
                   value={formData.referenceNo}
                   onChange={handleChange}
                   className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold mb-1 block">Balance Due</label>
+                <input
+                  type="text"
+                  name="balanceDue"
+                  value={formData.balanceDue}
+                  readOnly
+                  className="border p-2 rounded w-full bg-gray-100"
                 />
               </div>
 

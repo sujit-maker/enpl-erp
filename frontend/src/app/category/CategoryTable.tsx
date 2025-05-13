@@ -80,11 +80,11 @@ const CategoryTable: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-      await axios.put(`http://128.199.19.28:8000/category/${selectedCategory.id}`, {
-        categoryName: formData.categoryName,
-        categoryId: formData.categoryId,
-        subCategories: formData.subCategories,
-      });
+     await axios.put(`http://localhost:8000/category/${selectedCategory.id}`, {
+  categoryName: formData.categoryName,
+  categoryId: String(formData.categoryId), // ensure it's a string
+  subCategories: formData.subCategories,
+});
       alert("Category updated successfully!");
       setIsUpdateModalOpen(false);
       fetchCategories();
@@ -99,7 +99,10 @@ const CategoryTable: React.FC = () => {
   }, []);
 
   const filteredCategories = categories.filter((category) =>
-    category.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    category.subCategories.some((subCategory) =>
+      subCategory.subCategoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const indexOfLastUser = currentPage * itemsPerPage;

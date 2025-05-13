@@ -77,10 +77,6 @@ class ProductDto {
 
 export class CreateCustomerDto {
 
-  @IsNotEmpty()
-  @IsString()
-  customerCode :string;
-
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -124,8 +120,6 @@ export class CreateCustomerDto {
   @IsString()
   website?: string;
 
-
-
   @IsNotEmpty()
   @IsString()
   creditTerms: string;
@@ -150,13 +144,16 @@ export class CreateCustomerDto {
   @IsInt()
   executiveId?: number;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CustomerContactDto)
-  contacts: CustomerContactDto[];
+ @IsOptional()
+@IsArray()
+@ValidateNested({ each: true })
+@Type(() => CustomerContactDto)
+contacts?: CustomerContactDto[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CustomerBankDetailDto)
-  bankDetails: CustomerBankDetailDto[];
+@IsOptional()
+@IsArray()
+@ValidateNested({ each: true })
+@Type(() => CustomerBankDetailDto)
+bankDetails?: CustomerBankDetailDto[];
+
 }
