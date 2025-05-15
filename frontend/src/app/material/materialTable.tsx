@@ -6,6 +6,8 @@ import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
 import SerialCombobox from "@/components/ui/SerialCombobox";
 import MacAddressCombobox from "@/components/ui/MacAddressCombobox";
+import Papa from "papaparse";
+import { FaDownload, FaEdit, FaSearch, FaTrashAlt } from "react-icons/fa";
 
 interface Vendor {
   id: number;
@@ -173,6 +175,72 @@ const MaterialDeliveryForm: React.FC = () => {
     }));
   };
 
+  const handleDownloadCSV = () => {
+    if (!deliveryList.length) return;
+
+    // Flatten all sites from all customers
+    const allSites: Site[] = customers.flatMap((c) => c.Sites || []);
+
+    const csvData = deliveryList.map((delivery) => {
+      const customerName =
+        customers.find((c) => c.id === delivery.customerId)?.customerName ||
+        "N/A";
+
+      const siteName =
+        allSites.find((s) => s.id === delivery.siteId)?.siteName || "N/A";
+
+      const vendorName =
+        vendors.find((v) => v.id === delivery.vendorId)?.vendorName || "N/A";
+
+      const productDetails = (delivery.materialDeliveryItems || [])
+        .map((item: any) => {
+          const inventoryItem = inventory.find(
+            (inv) => inv.id === item.inventoryId
+          );
+
+          const productName =
+            products.find((p) => p.id === item.productId)?.productName ||
+            inventoryItem?.product?.productName ||
+            "N/A";
+
+          const serial =
+            inventoryItem?.serialNumber || item.serialNumber || "N/A";
+          const mac = inventoryItem?.macAddress || item.macAddress || "N/A";
+
+          return `${productName} (SN: ${serial}, MAC: ${mac})`;
+        })
+        .join("; ");
+
+      return {
+        DeliveryType: delivery.deliveryType || "N/A",
+        RefNumber: delivery.refNumber ? `="${delivery.refNumber}"` : "N/A",
+        SalesOrderNo: delivery.salesOrderNo
+          ? `="${delivery.salesOrderNo}"`
+          : "N/A",
+        QuotationNo: delivery.quotationNo
+          ? `="${delivery.quotationNo}"`
+          : "N/A",
+        PurchaseInvoiceNo: delivery.purchaseInvoiceNo
+          ? `="${delivery.purchaseInvoiceNo}"`
+          : "N/A",
+        Customer: customerName,
+        Site: siteName,
+        Vendor: vendorName,
+        Products: productDetails || "N/A",
+      };
+    });
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "material-deliveries.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleItemChange = (
     index: number,
     field: keyof DeliveryItem,
@@ -270,37 +338,47 @@ const MaterialDeliveryForm: React.FC = () => {
     }
   };
 
-  const openModal = (delivery?: any) => {
-    if (delivery) {
-      const enrichedItems = (delivery.materialDeliveryItems || []).map(
-        (item: any) => ({
+ const openModal = (delivery?: any) => {
+  if (delivery) {
+    const enrichedItems = (delivery.materialDeliveryItems || []).map(
+      (item: any) => {
+        const inv = inventory.find((i) => i.id === item.inventoryId);
+
+        return {
           inventoryId: item.inventoryId || 0,
-          serialNumber: item.inventory?.serialNumber || "",
-          macAddress: item.inventory?.macAddress || "",
-          productId: item.inventory?.productId || 0,
-        })
-      );
+          serialNumber: item.serialNumber || inv?.serialNumber || "",
+          macAddress: item.macAddress || inv?.macAddress || "",
+          productId: item.productId || inv?.productId || 0,
+          productName: inv?.product?.productName || "Unknown",
+          vendorId: delivery.vendorId || inv?.vendorId || undefined,
+          customerId: delivery.customerId || undefined,
+          siteId: delivery.siteId || undefined,
+        };
+      }
+    );
 
-      setFormData({
-        id: delivery.id,
-        deliveryType: delivery.deliveryType,
-        refNumber: delivery.refNumber,
-        salesOrderNo: delivery.salesOrderNo,
-        quotationNo: delivery.quotationNo,
-        purchaseInvoiceNo: delivery.purchaseInvoiceNo,
-        customerId: delivery.customerId || 0,
-        siteId: delivery.siteId || 0,
-        vendorId: delivery.vendorId || 0,
-      });
+    setFormData({
+      id: delivery.id,
+      deliveryType: delivery.deliveryType || "",
+      refNumber: delivery.refNumber || "",
+      salesOrderNo: delivery.salesOrderNo || "",
+      quotationNo: delivery.quotationNo || "",
+      purchaseInvoiceNo: delivery.purchaseInvoiceNo || "",
+      customerId: delivery.customerId || 0,
+      siteId: delivery.siteId || 0,
+      vendorId: delivery.vendorId || 0,
+    });
 
-      setItems(enrichedItems);
-    } else {
-      setFormData(initialFormData);
-      setItems([{ serialNumber: "", macAddress: "", productId: 0 }]); // Reset the items if creating new
-    }
+    setItems(enrichedItems.length ? enrichedItems : [{ serialNumber: "", macAddress: "", productId: 0 }]);
+  } else {
+    // Reset for new entry
+    setFormData(initialFormData);
+    setItems([{ serialNumber: "", macAddress: "", productId: 0 }]);
+  }
 
-    setIsModalOpen(true);
-  };
+  setIsModalOpen(true);
+};
+
 
   const handleDelete = (id: any): void => {
     if (confirm("Are you sure you want to delete this delivery?")) {
@@ -308,7 +386,7 @@ const MaterialDeliveryForm: React.FC = () => {
         .delete(`http://localhost:8000/material-delivery/${id}`)
         .then(() => {
           alert("Delivery deleted!");
-          fetchDeliveries(); // Refresh deliveries list after deletion
+          fetchDeliveries();
         })
         .catch((error) => {
           console.error(error);
@@ -317,28 +395,47 @@ const MaterialDeliveryForm: React.FC = () => {
     }
   };
 
+
+
   return (
     <>
       <div className="flex-1 p-6 overflow-auto lg:ml-72">
-        <div className="flex justify-between items-center mb-5 mt-16">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2 mb-5 mt-16">
+          {/* Add Delivery button */}
           <button
             onClick={() => openModal()}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Delivery
           </button>
-          <input
-            type="text"
-            placeholder="Search deliveries..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border p-2 rounded w-full md:w-1/3"
-          />
+
+          {/* Search + Download grouped */}
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+                      <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                        <FaSearch />
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+                      />
+                    </div>
+            <button
+              onClick={handleDownloadCSV}
+              title="Download CSV"
+              className="text-blue-600 hover:text-blue-800 text-xl"
+            >
+              <FaDownload />
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[800px] w-full text-center border-collapse border border-gray-200">
-            <thead className="bg-gray-100">
+             <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr>
                 <th className="border p-2">Delivery Type</th>
                 <th className="border p-2">Delivery Challan</th>
@@ -348,7 +445,6 @@ const MaterialDeliveryForm: React.FC = () => {
                 <th className="border p-2">Ref Number</th>
                 <th className="border p-2">Customer Name</th>
                 <th className="border p-2">Site Name</th>
-
                 <th className="border p-2">Vendor Name</th>
                 <th className="border p-2">Serial Number</th>
                 <th className="border p-2">Product</th>
@@ -437,20 +533,24 @@ const MaterialDeliveryForm: React.FC = () => {
                         .join(", ") || "N/A"}
                     </td>
 
-                    <td className="border p-2">
-                      <button
-                        onClick={() => openModal(delivery)}
-                        className="text-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(delivery.id)}
-                        className="text-red-600 ml-2"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                   <td className="border p-2 text-center">
+  <div className="flex justify-center items-center gap-3">
+    <button
+      onClick={() => openModal(delivery)}
+      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+      title="Edit"
+    >
+      <FaEdit />
+    </button>
+    <button
+      onClick={() => handleDelete(delivery.id)}
+      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+      title="Delete"
+    >
+      <FaTrashAlt />
+    </button>
+  </div>
+</td>
                   </tr>
                 ))}
             </tbody>

@@ -245,7 +245,7 @@ const ServiceContractTable: React.FC = () => {
               });
               setIsCreateModalOpen(true);
             }}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Service Contract
           </button>
@@ -262,8 +262,8 @@ const ServiceContractTable: React.FC = () => {
 
 
         <div className="overflow-x-auto">
-          <table className="min-w-[1000px] w-full text-sm border border-gray-200">
-            <thead className="bg-gray-100 text-left">
+           <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr>
                 <th className="p-2 border">Relationship Manager</th>
                 <th className="p-2 border">Customer</th>

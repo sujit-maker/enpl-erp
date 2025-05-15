@@ -5,6 +5,9 @@ import axios from "axios";
 import { PencilLine, Trash2 } from "lucide-react";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
 import { ProductCombobox } from "@/components/ui/ProductCombobox";
+import Papa from "papaparse";
+import { FaDownload, FaSearch } from "react-icons/fa";
+
 
 interface ProductInventory {
   productId: number;
@@ -138,6 +141,50 @@ const PurchaseInvoiceTable: React.FC = () => {
     }
   };
 
+  const handleDownloadCSV = () => {
+  if (filteredInventory.length === 0) return;
+
+  const csvData = filteredInventory.map((inventory) => {
+    const vendorName =
+      vendors.find((v) => v.id === inventory.vendorId)?.vendorName || "";
+
+    const productDetails = inventory.products
+      .map((product) => {
+        const productName =
+          products.find((p) => p.id === product.productId)?.productName || "";
+        return `${productName} (SN: ${product.serialNumber})`;
+      })
+      .join("; ");
+
+    return {
+      PurchaseDate: inventory.purchaseDate,
+      PurchaseInvoice: inventory.purchaseInvoice,
+      Vendor: vendorName,
+      Status: inventory.status || "",
+      CreditTerms: inventory.creditTerms || "",
+      DueDate: inventory.dueDate || "",
+      InvoiceNetAmount: inventory.invoiceNetAmount || "",
+      GSTAmount: inventory.gstAmount || "",
+      InvoiceGrossAmount: inventory.invoiceGrossAmount || "",
+      PaidAmount: inventory.paidAmount || "",
+      DueAmount: inventory.dueAmount || "",
+      Duration: inventory.duration || "",
+      Products: productDetails,
+    };
+  });
+
+  const csv = Papa.unparse(csvData);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "purchase-invoices.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+
   const fetchProducts = async () => {
     const res = await axios.get("http://localhost:8000/products");
     setProducts(res.data);
@@ -269,19 +316,34 @@ const PurchaseInvoiceTable: React.FC = () => {
 
   return (
     <div className="flex-1 p-4 lg:ml-72 mt-20">
-      <div className="mb-4 flex justify-end">
-        <input
-          type="text"
-          placeholder="Search invoices, vendors ..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded w-full md:w-1/3"
-        />
-      </div>
+     <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-2">
+
+    
+ <div className="relative w-full md:w-64">
+           <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+             <FaSearch />
+           </span>
+           <input
+             type="text"
+             placeholder="Search..."
+             value={searchQuery}
+             onChange={(e) => setSearchQuery(e.target.value)}
+             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+           />
+         </div>
+  <button
+    onClick={handleDownloadCSV}
+    title="Download CSV"
+    className="text-blue-600 hover:text-blue-800 text-xl"
+  >
+    <FaDownload />
+  </button>
+</div>
+
 
       <div className="overflow-x-auto">
-        <table className="min-w-[900px] w-full border text-sm">
-          <thead className="bg-gray-100 text-center">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
               <th className="p-2 border">Purchased Date</th>
               <th className="p-2 border">P.Invoice No</th>

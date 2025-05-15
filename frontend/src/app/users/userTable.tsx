@@ -89,7 +89,7 @@ interface Department {
         <div className="flex justify-between items-center mb-5 mt-16">
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add User
           </button>
@@ -98,8 +98,8 @@ interface Department {
         {/* Responsive Scrollable Table */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-            <table className="min-w-[800px] w-full text-center border-collapse border border-gray-600">
-              <thead className="bg-gray-300">
+               <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
                 <tr>
                   <th className="border border-gray-300 p-2">Username</th>
                   <th className="border border-gray-300 p-2">Department</th>

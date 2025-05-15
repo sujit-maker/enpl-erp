@@ -5,6 +5,8 @@ import axios from "axios";
 import { PencilLine } from "lucide-react";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
 import { ProductCombobox } from "@/components/ui/ProductCombobox";
+import Papa from "papaparse";
+import { FaDownload, FaSearch } from "react-icons/fa"; // FontAwesome icon for download
 
 interface ProductInventory {
   productId: number;
@@ -58,6 +60,11 @@ const InventoryTable: React.FC = () => {
   const [inventoryList, setInventoryList] = useState<Inventory[]>([]);
   const [filteredInventory, setFilteredInventory] = useState<Inventory[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [formData, setFormData] = useState<Inventory>(initialFormState);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,12 +72,48 @@ const InventoryTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
-  const paginatedInventory = filteredInventory.slice(
+  const sortedInventory = [...filteredInventory].sort((a, b) => {
+    if (!sortConfig) return 0;
+
+    const { key, direction } = sortConfig;
+
+    const getValue = (obj: any, key: string) => {
+      switch (key) {
+        case "vendor":
+          return vendors.find((v) => v.id === obj.vendorId)?.vendorName || "";
+        case "purchaseDate":
+        case "purchaseInvoice":
+        case "status":
+        case "duration":
+          return obj[key] || "";
+        default:
+          return "";
+      }
+    };
+
+    const aValue = getValue(a, key).toLowerCase?.() || "";
+    const bValue = getValue(b, key).toLowerCase?.() || "";
+
+    if (aValue < bValue) return direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const paginatedInventory = sortedInventory.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
+
   const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev?.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
 
   useEffect(() => {
     fetchInventory();
@@ -108,6 +151,44 @@ const InventoryTable: React.FC = () => {
   const fetchVendors = async () => {
     const res = await axios.get("http://localhost:8000/vendors");
     setVendors(res.data);
+  };
+
+  const handleDownloadCSV = () => {
+    if (inventoryList.length === 0) return;
+
+    const csvData = inventoryList.flatMap((inventory) => {
+      const vendorName =
+        vendors.find((v) => v.id === inventory.vendorId)?.vendorName || "";
+      return inventory.products.map((product) => ({
+        PurchaseDate: inventory.purchaseDate,
+        PurchaseInvoice: inventory.purchaseInvoice,
+        Vendor: vendorName,
+        Status: inventory.status || "",
+        CreditTerms: inventory.creditTerms || "",
+        DueDate: inventory.dueDate || "",
+        InvoiceNetAmount: inventory.invoiceNetAmount || "",
+        GSTAmount: inventory.gstAmount || "",
+        InvoiceGrossAmount: inventory.invoiceGrossAmount || "",
+        Duration: inventory.duration || "",
+        ProductID: product.productId,
+        Make: product.make,
+        Model: product.model,
+        SerialNumber: product.serialNumber,
+        MacAddress: product.macAddress,
+        WarrantyPeriod: product.warrantyPeriod,
+        PurchaseRate: product.purchaseRate,
+      }));
+    });
+
+    const csv = Papa.unparse(csvData);
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "inventory.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleSearch = (query: string) => {
@@ -224,41 +305,72 @@ const InventoryTable: React.FC = () => {
 
   return (
     <div className="flex-1 p-4 lg:ml-72 mt-20">
-      <div className="flex flex-col md:flex-row justify-between mb-4 gap-2">
+      <div className="flex flex-col md:flex-row justify-between mb-4 gap-2 items-center">
         <button
           onClick={() => openModal()}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
         >
           Add Inventory
         </button>
-        <input
-          type="text"
-          placeholder="Search Inventory..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded w-full md:w-64"
-        />
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <FaSearch />
+            </span>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+            />
+          </div>
+          <button
+            onClick={handleDownloadCSV}
+            title="Download CSV"
+            className="text-blue-600 hover:text-blue-800 text-xl"
+          >
+            <FaDownload />
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[900px] w-full border text-sm">
-          <thead className="bg-gray-100 text-center">
+        <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+          <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
-              <th className="p-2 border text-center">Product Name</th>
-              <th className="p-2 border text-center">Make</th>
-              <th className="p-2 border text-center">Model</th>
-              <th className="p-2 border text-center">Serial No</th>
-              <th className="p-2 border text-center">MAC Address</th>
-              <th className="p-2 border text-center">Warranty Period(Days)</th>
-              <th className="p-2 border text-center">Purchase Rate</th>
-              <th className="p-2 border text-center">Purchased From</th>
-              <th className="p-2 border text-center">Purchased Date</th>
-              <th className="p-2 border text-center">P.Invoice No</th>
-              <th className="p-2 border text-center">Status</th>
-              <th className="p-2 border text-center">Age</th>
-              <th className="p-2 border text-center">Actions</th>
+              {[
+                { label: "Product Name", key: "productName" },
+                { label: "Make", key: "make" },
+                { label: "Model", key: "model" },
+                { label: "Serial No", key: "serialNumber" },
+                { label: "MAC Address", key: "macAddress" },
+                { label: "Warranty Period(Days)", key: "warrantyPeriod" },
+                { label: "Purchase Rate", key: "purchaseRate" },
+                { label: "Purchased From", key: "vendor" },
+                { label: "Purchased Date", key: "purchaseDate" },
+                { label: "P.Invoice No", key: "purchaseInvoice" },
+                { label: "Status", key: "status" },
+                { label: "Age", key: "duration" },
+                { label: "Actions", key: "" },
+              ].map((col) => (
+                <th
+                  key={col.key}
+                  className="p-2 border text-center cursor-pointer select-none"
+                  onClick={() => col.key && handleSort(col.key)}
+                >
+                  {col.label}
+                  {sortConfig?.key === col.key && (
+                    <span className="ml-1">
+                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+              ))}
             </tr>
           </thead>
+
           <tbody>
             {paginatedInventory.map((inv) =>
               inv.products.map((product, index) => (

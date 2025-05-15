@@ -131,18 +131,19 @@ model Inventory {
   id                 Int                  @id @default(autoincrement())
   vendorId           Int
   purchaseDate       DateTime
-  purchaseInvoice    String
+  purchaseInvoice    String  @unique
   creditTerms        String
   dueDate            String
   invoiceNetAmount   String
   gstAmount          String
+  dueAmount          Float?
   invoiceGrossAmount String
   status             String?
 
   vendor             Vendor               @relation(fields: [vendorId], references: [id])
-  products           ProductInventory[]   // ✅ Link to product inventory items
-  materialDeliveryItem  MaterialDeliveryItem[] // ✅ Link to material delivery items
-  vendorPayment    VendorPayment[]      // ✅ Link to vendor payments
+  products           ProductInventory[]   
+  materialDeliveryItem  MaterialDeliveryItem[] 
+  vendorPayment    VendorPayment[]      
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 }
@@ -152,7 +153,7 @@ model ProductInventory {
   id              Int       @id @default(autoincrement())
   inventoryId     Int
   productId       Int
- make             String
+  make             String
   model            String
   serialNumber    String
   macAddress      String
@@ -165,8 +166,6 @@ model ProductInventory {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 }
-
-
 
 model Service {
   id                   Int                @id @default(autoincrement())
@@ -220,7 +219,6 @@ model BankDetail {
   ifscCode      String
   branchName    String
   vendorId      Int
-  customerId   Int
   vendor        Vendor @relation("VendorBankDetails", fields: [vendorId], references: [id], onDelete: Cascade)
 }
 
@@ -244,7 +242,6 @@ model Customer {
   customerName    String
   registerAddress String
   gstNo           String  @unique
-
   emailId          String             @unique
   gstpdf           String?
   businessType     String?

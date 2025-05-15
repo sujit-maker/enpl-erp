@@ -32,6 +32,10 @@ export class CreateInventoryDto {
 
   @IsOptional()
   @IsString()
+  dueAmount?: number;
+  
+  @IsOptional()
+  @IsString()
   duration?: string;
 
   @IsArray()

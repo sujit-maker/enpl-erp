@@ -43,7 +43,11 @@ export class VendorService {
     return updatedVendor;
   }
   
-  
+  // Count total number of vendors
+async countVendors(): Promise<number> {
+  return this.prisma.vendor.count();
+}
+
   
 
   // Get all Vendors including nested relations

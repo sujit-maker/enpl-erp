@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PencilLine, Plus, Trash2 } from "lucide-react";
+import { FaEdit, FaSearch, FaTrashAlt } from "react-icons/fa";
 
 interface CustomerContact {
   title: string;
@@ -81,6 +82,7 @@ const initialFormState: Customer = {
 const CustomerTable: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [gstpdfFile, setGstPdfFile] = useState<File | null>(null);
   const [existingGstFileName, setExistingGstFileName] = useState<string | null>(
     null
@@ -272,6 +274,14 @@ const CustomerTable: React.FC = () => {
     }
   };
 
+  const filteredCustomers = customers.filter((customer) =>
+  customer.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  customer.customerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  customer.emailId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  customer.city.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
+
   return (
     <div className="flex-1 p-6 overflow-auto lg:ml-72">
       <div className="flex justify-between items-center mb-5 mt-16">
@@ -283,15 +293,27 @@ const CustomerTable: React.FC = () => {
               products: prev.products,
             }));
           }}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
         >
           Add Customer
         </button>
+         <div className="relative w-full md:w-64">
+          <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+            <FaSearch />
+          </span>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[800px] w-full text-center border-collapse border border-gray-200">
-          <thead className="bg-gray-100">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
               <th className="p-2 border">Customer ID</th>
               <th className="p-2 border">Customer Name</th>
@@ -304,7 +326,7 @@ const CustomerTable: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {customers.map((cust) => (
+            {filteredCustomers.map((cust) => (
               <tr key={cust.id} className="border-b">
                 <td className="p-2 border">{cust.customerCode}</td>
                 <td className="p-2 border">{cust.customerName}</td>
@@ -337,22 +359,23 @@ const CustomerTable: React.FC = () => {
                     "No PDF"
                   )}
                 </td>
-                <td className="p-2 border flex justify-center gap-3 items-center">
-                  <button
-                    onClick={() => handleEdit(cust)}
-                    className="text-blue-500 hover:text-blue-700"
-                    title="Edit"
-                  >
-                    <PencilLine size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cust.id)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Delete"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
+               <td className="px-4 py-2 text-center space-x-2">
+  <button
+    onClick={() => handleEdit(cust)}
+    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+    title="Edit"
+  >
+    <FaEdit />
+  </button>
+  <button
+    onClick={() => handleDelete(cust.id)}
+    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+    title="Delete"
+  >
+    <FaTrashAlt />
+  </button>
+</td>
+
               </tr>
             ))}
           </tbody>

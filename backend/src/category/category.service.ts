@@ -1,15 +1,18 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-
+                      
 @Injectable()
 export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
-
-  
+   
   async createCategory(createCategoryDto: CreateCategoryDto) {
-    const { categoryId, categoryName} = createCategoryDto;
+    const { categoryId, categoryName } = createCategoryDto;
   
     return this.prisma.category.create({
       data: {
@@ -17,12 +20,10 @@ export class CategoryService {
         categoryId,
       },
       include: {
-        subCategories: true, // Return the subcategories with the created category
+        subCategories: true,
       },
     });
   }
-  
-  
   
   async getCategories() {
     return this.prisma.category.findMany({
@@ -31,7 +32,6 @@ export class CategoryService {
       },
     });
   }
-
   
   async getCategoryById(id: number) {
     const category = await this.prisma.category.findUnique({
@@ -40,17 +40,16 @@ export class CategoryService {
         subCategories: true,
       },
     });
-
+  
     if (!category) {
       throw new NotFoundException(`Category with ID ${id} not found`);
     }
-
+  
     return category;
   }
-
   
   async updateCategory(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const { categoryId, categoryName} = updateCategoryDto;
+    const { categoryId, categoryName } = updateCategoryDto;
   
     return this.prisma.category.update({
       where: { id },
@@ -67,18 +66,16 @@ export class CategoryService {
     });
   }
   
-  
   async deleteCategory(id: number) {
     try {
-      
       await this.prisma.subCategory.deleteMany({
         where: { categoryId: id },
       });
   
-      
       return await this.prisma.category.delete({
         where: { id },
       });
+
     } catch (error) {
       if (error.code === 'P2025') {
         throw new NotFoundException(`Category with ID ${id} not found`);
@@ -86,5 +83,4 @@ export class CategoryService {
       throw new InternalServerErrorException('Failed to delete category');
     }
   }
-  
 }

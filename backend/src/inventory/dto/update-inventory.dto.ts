@@ -38,6 +38,10 @@ export class UpdateInventoryDto {
   @IsString()
   status?: string;
 
+    @IsOptional()
+  @IsString()
+  dueAmount?: number;
+
   @IsOptional()
   @IsString()
   duration?: string;

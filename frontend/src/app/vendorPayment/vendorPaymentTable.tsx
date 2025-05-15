@@ -4,13 +4,16 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PencilLine, Trash } from "lucide-react";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
+import Papa from "papaparse";
+import { FaDownload, FaSearch } from "react-icons/fa";
+
 
 interface Vendor {
   id: number;
   vendorName: string;
 }
- 
-  interface VendorPayment {
+
+interface VendorPayment {
   id?: number;
   vendorId: number;
   purchaseInvoiceNo: string;
@@ -40,8 +43,8 @@ const initialFormState: VendorPayment = {
   createdAt: "",
   updatedAt: "",
 };
-
-const VendorPaymentTable: React.FC = () => {
+ 
+  const VendorPaymentTable: React.FC = () => {
   const [payments, setPayments] = useState<VendorPayment[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorInvoices, setVendorInvoices] = useState<any[]>([]);
@@ -52,9 +55,9 @@ const VendorPaymentTable: React.FC = () => {
   const itemsPerPage = 10;
 
   const filtered = payments.filter((p) => {
-    const vendorName =
+  const vendorName =
       vendors.find((v) => v.id === p.vendorId)?.vendorName.toLowerCase() || "";
-    const q = searchQuery.toLowerCase();
+  const q = searchQuery.toLowerCase();
     return (
       vendorName.includes(q) ||
       p.paymentDate.toLowerCase().includes(q) ||
@@ -88,6 +91,42 @@ const VendorPaymentTable: React.FC = () => {
     const res = await axios.get("http://localhost:8000/vendors");
     setVendors(res.data);
   };
+
+  const handleDownloadCSV = () => {
+  if (!payments.length) return;
+
+  const csvData = payments.map((payment) => {
+    const vendorName =
+      vendors.find((v) => v.id === payment.vendorId)?.vendorName || "N/A";
+
+    return {
+      Vendor: vendorName,
+      PurchaseInvoiceNo: payment.purchaseInvoiceNo
+        ? `="${payment.purchaseInvoiceNo}"`
+        : "N/A",
+      InvoiceGrossAmount: payment.invoiceGrossAmount || "N/A",
+      DueAmount: payment.dueAmount || "N/A",
+      PaidAmount: payment.paidAmount || "N/A",
+      BalanceDue: payment.balanceDue || "N/A",
+      PaymentDate: payment.paymentDate || "N/A",
+      ReferenceNo: payment.referenceNo
+        ? `="${payment.referenceNo}"`
+        : "N/A",
+      PaymentType: payment.paymentType || "N/A",
+      Remark: payment.remark || "N/A",
+    };
+  });
+
+  const csv = Papa.unparse(csvData);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", "vendor-payments.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -127,7 +166,7 @@ const VendorPaymentTable: React.FC = () => {
       fetchPayments();
     } catch (err) {
       console.error(err);
-      alert("Error saving payment");
+      alert("fill all mandatory data");
     }
   };
 
@@ -139,7 +178,7 @@ const VendorPaymentTable: React.FC = () => {
       try {
         await axios.delete(`http://localhost:8000/vendor-payment/${id}`);
         alert("Payment deleted!");
-        fetchPayments(); 
+        fetchPayments();
       } catch (err) {
         console.error(err);
         alert("Error deleting payment");
@@ -155,25 +194,42 @@ const VendorPaymentTable: React.FC = () => {
 
   return (
     <div className="flex-1 p-4 lg:ml-72 mt-20">
-      <div className="flex flex-col md:flex-row justify-between mb-4 gap-2">
-        <button
-          onClick={() => openModal()}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Add Payment
-        </button>
-        <input
-          type="text"
-          placeholder="Search Payments..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded w-full md:w-64"
-        />
-      </div>
+     <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+  <button
+    onClick={() => openModal()}
+  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+  >
+    Add Payment
+  </button>
+
+  {/* Group search input + download icon side by side */}
+  <div className="flex items-center gap-2 w-full md:w-auto">
+    <div className="relative w-full md:w-64">
+              <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <FaSearch />
+              </span>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+              />
+            </div>
+    <button
+      onClick={handleDownloadCSV}
+      title="Download CSV"
+      className="text-blue-600 hover:text-blue-800 text-xl"
+    >
+      <FaDownload />
+    </button>
+  </div>
+</div>
+
 
       <div className="overflow-x-auto">
-        <table className="min-w-[900px] w-full border text-sm">
-          <thead className="bg-gray-100 text-center">
+         <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
               <th className="p-2 border">Entry Date</th>
               <th className="p-2 border">Vendor</th>
@@ -228,7 +284,7 @@ const VendorPaymentTable: React.FC = () => {
                     <PencilLine size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(p.id!)} 
+                    onClick={() => handleDelete(p.id!)}
                     className="text-red-600"
                   >
                     <Trash size={18} />
@@ -305,6 +361,7 @@ const VendorPaymentTable: React.FC = () => {
                         const previousPayments = payments.filter(
                           (p) => p.purchaseInvoiceNo === invoiceNo
                         );
+
                         const totalPaid = previousPayments.reduce(
                           (sum, p) => sum + parseFloat(p.paidAmount || "0"),
                           0
@@ -318,6 +375,7 @@ const VendorPaymentTable: React.FC = () => {
                           invoiceGrossAmount: firstInvoice.invoiceGrossAmount,
                           dueAmount: dueAmount.toFixed(2),
                         }));
+
                       } else {
                         setVendorInvoices([]);
                         setFormData((prev) => ({
@@ -327,6 +385,7 @@ const VendorPaymentTable: React.FC = () => {
                           dueAmount: "",
                         }));
                       }
+
                     } catch (err) {
                       console.error("Failed to fetch inventory", err);
                       setVendorInvoices([]);
@@ -342,66 +401,51 @@ const VendorPaymentTable: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="font-semibold mb-1 block">
-                  Purchase Invoice
-                </label>
-
-                <select
-                  className="border p-2 rounded w-full"
-                  name="purchaseInvoiceNo"
-                  value={formData.purchaseInvoiceNo}
-                  onChange={(e) => {
-                    const selectedInvoiceNo = e.target.value;
-
-                    const selectedInvoice = vendorInvoices.find(
-                      (inv) => inv.purchaseInvoice === selectedInvoiceNo
-                    );
-
-                    if (selectedInvoice) {
-                      const invoiceGross = parseFloat(
-                        selectedInvoice.invoiceGrossAmount || "0"
+              {vendorInvoices.length > 1 && (
+                <div>
+                  <label className="font-semibold mb-1 block">
+                    Select Invoice
+                  </label>
+                  <select
+                    value={formData.purchaseInvoiceNo}
+                    onChange={(e) => {
+                      const selectedInvoiceNo = e.target.value;
+                      const selectedInvoice = vendorInvoices.find(
+                        (inv) => inv.purchaseInvoice === selectedInvoiceNo
                       );
+                      if (selectedInvoice) {
+                        const invoiceGrossAmount = parseFloat(
+                          selectedInvoice.invoiceGrossAmount || "0"
+                        );
+                        const previousPayments = payments.filter(
+                          (p) => p.purchaseInvoiceNo === selectedInvoiceNo
+                        );
+                        const totalPaid = previousPayments.reduce(
+                          (sum, p) => sum + parseFloat(p.paidAmount || "0"),
+                          0
+                        );
+                        const dueAmount = invoiceGrossAmount - totalPaid;
 
-                      // Find previous payments for this invoice
-                      const matchingPayments = payments.filter(
-                        (p) => p.purchaseInvoiceNo === selectedInvoiceNo
-                      );
-
-                      const totalPaid = matchingPayments.reduce(
-                        (sum, p) => sum + parseFloat(p.paidAmount || "0"),
-                        0
-                      );
-
-                      const newDue = invoiceGross - totalPaid;
-
-                      setFormData((prev) => ({
-                        ...prev,
-                        purchaseInvoiceNo: selectedInvoiceNo,
-                        invoiceGrossAmount: selectedInvoice.invoiceGrossAmount,
-                        dueAmount: newDue.toFixed(2),
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        purchaseInvoiceNo: selectedInvoiceNo,
-                        invoiceGrossAmount: "",
-                        dueAmount: "",
-                      }));
-                    }
-                  }}
-                >
-                  <option value="">Select Invoice</option>
-                  {vendorInvoices.map((inv) => (
-                    <option
-                      key={inv.purchaseInvoice}
-                      value={inv.purchaseInvoice}
-                    >
-                      {inv.purchaseInvoice}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                        setFormData((prev) => ({
+                          ...prev,
+                          purchaseInvoiceNo: selectedInvoiceNo,
+                          invoiceGrossAmount:
+                            selectedInvoice.invoiceGrossAmount,
+                          dueAmount: dueAmount.toFixed(2),
+                        }));
+                      }
+                    }}
+                    className="border p-2 rounded w-full"
+                  >
+                    <option value="">-- Select Invoice --</option>
+                    {vendorInvoices.map((inv, idx) => (
+                      <option key={idx} value={inv.purchaseInvoice}>
+                        {inv.purchaseInvoice}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="font-semibold mb-1 block">
@@ -427,6 +471,7 @@ const VendorPaymentTable: React.FC = () => {
                   className="border p-2 rounded w-full"
                 />
               </div>
+
               <div>
                 <label className="font-semibold mb-1 block">Payment Date</label>
                 <input
@@ -440,13 +485,13 @@ const VendorPaymentTable: React.FC = () => {
 
               <div>
                 <label className="font-semibold mb-1 block">Payment Type</label>
-
                 <select
                   name="paymentType"
                   value={formData.paymentType}
                   onChange={handleChange}
                   className="border p-2 rounded w-full"
                 >
+                  <option value="">-- Select Type --</option>
                   <option value="Cash">Cash</option>
                   <option value="Bank Transfer">Bank Transfer</option>
                   <option value="Cheque">Cheque</option>
@@ -465,6 +510,7 @@ const VendorPaymentTable: React.FC = () => {
                   className="border p-2 rounded w-full"
                 />
               </div>
+
               <div>
                 <label className="font-semibold mb-1 block">Reference</label>
                 <input
@@ -513,6 +559,7 @@ const VendorPaymentTable: React.FC = () => {
                 Save
               </button>
             </div>
+
           </div>
         </div>
       )}

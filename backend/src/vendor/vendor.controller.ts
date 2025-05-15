@@ -64,6 +64,11 @@ export class VendorController {
     }
   }
   
+   @Get('/count')
+  getTotalVendors() {
+    return this.vendorService.countVendors();
+  }
+
   // Get all vendors
   @Get()
   async findAll() {

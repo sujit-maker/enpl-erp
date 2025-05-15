@@ -22,6 +22,36 @@ export class InventoryController {
     return this.inventoryService.findOne(id);
   }
 
+  @Get('purchaseRate/count')
+  getTotalPurchaseRate() {
+    return this.inventoryService.getTotalPurchaseRate();
+  }
+
+  @Get('sold/purchaseRate')
+  getSoldPyrchaseRate(){
+    return this.inventoryService.getTotalPurchaseRateSold();
+  }
+
+   @Get('rest/sold')
+  getRestSoldPyrchaseRate(){
+    return this.inventoryService.getTotalPurchaseRestSold();
+  }
+
+  @Get('/count/purchaseInvoice')
+  getCountPurchaseInvoice(){
+  return this.inventoryService.getUniquePurchaseInvoiceCount();
+  }
+
+  @Get('/count/dueAmount')
+  getDueAmount(){
+    return this.inventoryService.getTotalDueAmout();
+  }
+
+  @Get('count/demo')
+  getDemoOut(){
+    return this.inventoryService.getTotalDemoOut();
+  }
+
   @Put(':id')
   update(
     @Param('id', ParseIntPipe) id: number,

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PencilLine, Trash2 } from "lucide-react";
+import { FaSearch } from "react-icons/fa";
 
 interface Customer {
   id: number;
@@ -275,21 +276,26 @@ const SiteTable: React.FC = () => {
               });
               setIsCreateModalOpen(true);
             }}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Customer Site
           </button>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search ....."
-            className="border p-2 rounded w-full max-w-md"
-          />
+         <div className="relative w-full md:w-64">
+                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                     <FaSearch />
+                   </span>
+                   <input
+                     type="text"
+                     placeholder="Search..."
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+                   />
+                 </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-[800px] w-full text-center border-collapse border border-gray-200">
-            <thead className="bg-gray-100">
+       <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr>
                 <th className="border border-gray-200 p-4">Site ID</th>
                 <th className="px-6 py-3 text-left">Site Name</th>
@@ -325,38 +331,41 @@ const SiteTable: React.FC = () => {
                       "No PDF"
                     )}
                   </td>
-                  <td className="border px-6 py-3">
-                    <div className="flex justify-center items-center gap-3">
-                      <button
-                        onClick={() => {
-                          setSelectedSite(site);
-                          setFormData({
-                            siteName: site.siteName,
-                            siteAddress: site.siteAddress,
-                            state: site.state,
-                            city: site.city,
-                            gstNo: site.gstNo,
-                            gstpdf: site.gstpdf,
-                            contactName: [...site.contactName],
-                            contactNumber: [...site.contactNumber],
-                            emailId: [...site.emailId],
-                            customerId: site.customerId,
-                          });
-                          setGstPdfFile(null);
-                          setIsUpdateModalOpen(true);
-                        }}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        <PencilLine size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(site.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
+                 <td className="border px-6 py-3 text-center">
+  <div className="flex justify-center items-center gap-3">
+    <button
+      onClick={() => {
+        setSelectedSite(site);
+        setFormData({
+          siteName: site.siteName,
+          siteAddress: site.siteAddress,
+          state: site.state,
+          city: site.city,
+          gstNo: site.gstNo,
+          gstpdf: site.gstpdf,
+          contactName: [...site.contactName],
+          contactNumber: [...site.contactNumber],
+          emailId: [...site.emailId],
+          customerId: site.customerId,
+        });
+        setGstPdfFile(null);
+        setIsUpdateModalOpen(true);
+      }}
+      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+      title="Edit"
+    >
+      <PencilLine size={18} />
+    </button>
+    <button
+      onClick={() => handleDelete(site.id)}
+      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+      title="Delete"
+    >
+      <Trash2 size={18} />
+    </button>
+  </div>
+</td>
+
                 </tr>
               ))}
             </tbody>
@@ -574,7 +583,7 @@ const Modal: React.FC<{
         </button>
         <button
           onClick={onSave}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
         >
           Save
         </button>

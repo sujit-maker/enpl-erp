@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Plus } from "lucide-react";
 import { Trash2, PencilLine } from "lucide-react";
+import { FaEdit, FaSearch, FaTrashAlt } from "react-icons/fa";
 
 interface VendorContact {
   title: string;
@@ -78,7 +79,7 @@ const initialFormState: Vendor = {
   bankDetails: [emptyBank],
 };
 
-const VendorTable: React.FC = () => {
+  const VendorTable: React.FC = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
@@ -238,10 +239,7 @@ const VendorTable: React.FC = () => {
     const validBanks = formData.bankDetails.filter(
       (b) => b.accountNumber.trim() || b.ifscCode.trim() || b.bankName.trim()
     );
-    if (validBanks.length === 0) {
-      alert("Please add at least one valid bank detail.");
-      return;
-    }
+    
 
     try {
       if (formData.id) {
@@ -299,22 +297,27 @@ const VendorTable: React.FC = () => {
             setFormData(initialFormState); // clear form
             setIsCreateModalOpen(true);
           }}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
         >
           Add Company
         </button>
-        <input
-          type="text"
-          placeholder="Search ..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded w-full max-w-md"
-        />
+        <div className="relative w-full md:w-64">
+  <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+    <FaSearch />
+  </span>
+  <input
+    type="text"
+    placeholder="Search..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+  />
+</div>
       </div>
 
       <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-        <table className="min-w-[700px] w-full text-center border-collapse border border-gray-200">
-          <thead className="bg-gray-100">
+         <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
               <th className="p-2 border">Vendor ID</th>
               <th className="p-2 border">Vendor Type</th>
@@ -358,22 +361,23 @@ const VendorTable: React.FC = () => {
                 </td>
                 <td className="p-2 border">{vendor.creditTerms}</td>
 
-                <td className="p-2 border flex justify-center gap-3 items-center">
-                  <button
-                    onClick={() => handleEdit(vendor)}
-                    className="text-blue-500 hover:text-blue-700"
-                    title="Edit"
-                  >
-                    <PencilLine size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vendor.id)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Delete"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
+               <td className="px-4 py-2 text-center space-x-2">
+  <button
+    onClick={() => handleEdit(vendor)}
+    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+    title="Edit"
+  >
+    <FaEdit />
+  </button>
+  <button
+    onClick={() => handleDelete(vendor.id)}
+    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+    title="Delete"
+  >
+    <FaTrashAlt />
+  </button>
+</td>
+
               </tr>
             ))}
           </tbody>

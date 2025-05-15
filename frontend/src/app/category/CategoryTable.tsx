@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaEdit, FaSearch, FaTrashAlt } from "react-icons/fa";
 
 interface SubCategory {
   id: number;
@@ -101,6 +102,7 @@ const CategoryTable: React.FC = () => {
 
   const filteredCategories = categories.filter((category) =>
     category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  category.categoryId.toLowerCase().includes(searchTerm.toLowerCase())||
     category.subCategories.some((subCategory) =>
       subCategory.subCategoryName.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -128,22 +130,27 @@ const CategoryTable: React.FC = () => {
                 subCategories: [{ subCategoryName: "" }],
               });
             }}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Category
           </button>
-          <input
-            type="text"
-            placeholder="Search by category name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded mb-4 w-full md:w-1/3"
-          />
+         <div className="relative w-full md:w-64">
+                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                     <FaSearch />
+                   </span>
+                   <input
+                     type="text"
+                     placeholder="Search..."
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+                   />
+                 </div>
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-          <table className="min-w-[400px] w-full text-center border-collapse border border-gray-200">
-            <thead>
+            <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-200">
                 <th className="border border-gray-300 p-2">Category ID</th>                
                 <th className="border border-gray-300 p-2">Category Name</th>
@@ -160,32 +167,34 @@ const CategoryTable: React.FC = () => {
                     <td className="border border-gray-300 p-2">
                       {category.categoryName}
                     </td>
-                    <td className="border border-gray-300 p-2">
-                      <button
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          setFormData({
-                            categoryName: category.categoryName,
-                            categoryId: category.categoryId,
-                            subCategories: category.subCategories.map(
-                              (sub) => ({
-                                subCategoryName: sub.subCategoryName,
-                              })
-                            ),
-                          });
-                          setIsUpdateModalOpen(true);
-                        }}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(category.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                   <td className="border border-gray-300 p-2 text-center">
+  <div className="flex justify-center items-center gap-3">
+    <button
+      onClick={() => {
+        setSelectedCategory(category);
+        setFormData({
+          categoryName: category.categoryName,
+          categoryId: category.categoryId,
+          subCategories: category.subCategories.map((sub) => ({
+            subCategoryName: sub.subCategoryName,
+          })),
+        });
+        setIsUpdateModalOpen(true);
+      }}
+      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+      title="Edit"
+    >
+      <FaEdit />
+    </button>
+    <button
+      onClick={() => handleDelete(category.id)}
+      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+      title="Delete"
+    >
+      <FaTrashAlt />
+    </button>
+  </div>
+</td>
                   </tr>
                 ))
               ) : (

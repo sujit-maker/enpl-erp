@@ -12,6 +12,11 @@ import { UpdateProductDto } from './dto/update-product.dto';
     return this.productService.createProduct(createProductDto);
   }
 
+   @Get('/count')
+  getTotalVendors() {
+    return this.productService.countProducts();
+  }
+
   @Get()
   findAll() {
     return this.productService.getProducts();

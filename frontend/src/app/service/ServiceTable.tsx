@@ -192,7 +192,7 @@ const ServiceTable: React.FC = () => {
               });
               setIsCreateModalOpen(true);
             }}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Service
           </button>
@@ -206,8 +206,8 @@ const ServiceTable: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-          <table className="min-w-[1100px] w-full text-center border-collapse border border-gray-200">
-            <thead>
+              <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-200">
               <th
   onClick={() =>

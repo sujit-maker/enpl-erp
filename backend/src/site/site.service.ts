@@ -69,6 +69,11 @@ export class SiteService {
 }
 
 
+  // Count total number of sites
+async countSites(): Promise<number> {
+  return this.prisma.site.count();
+}
+
   
 
   // Get all Sites

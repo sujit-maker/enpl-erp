@@ -10,84 +10,87 @@ import { UpdateProductDto } from './dto/update-product.dto';
 @Injectable()
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
-  
-async createProduct(createProductDto: CreateProductDto) {
-  const {
-    productName,
-    productDescription,
-    HSN,
-    unit,
-    gstRate,
-    categoryId,
-    subCategoryId,
-  } = createProductDto;
 
-  // Step 1: Validate category and subcategory
-  const category = await this.prisma.category.findUnique({
-    where: { id: Number(categoryId) },
-  });
-  if (!category) throw new NotFoundException('Category not found');
+  async createProduct(createProductDto: CreateProductDto) {
+    const {
+      productName,
+      productDescription,
+      HSN,
+      unit,
+      gstRate,
+      categoryId,
+      subCategoryId,
+    } = createProductDto;
 
-  const subCategory = subCategoryId
-    ? await this.prisma.subCategory.findUnique({
-        where: { id: Number(subCategoryId) },
-      })
-    : null;
+    // Step 1: Validate category and subcategory
+    const category = await this.prisma.category.findUnique({
+      where: { id: Number(categoryId) },
+    });
+    if (!category) throw new NotFoundException('Category not found');
 
-  if (!subCategory) {
-    throw new BadRequestException('Subcategory not found');
-  }
+    const subCategory = subCategoryId
+      ? await this.prisma.subCategory.findUnique({
+          where: { id: Number(subCategoryId) },
+        })
+      : null;
 
-  // Step 2: Use subCategory.subCategoryId as base prefix
-  const baseProductId = subCategory.subCategoryId; // e.g., "MATCH-BAT"
+    if (!subCategory) {
+      throw new BadRequestException('Subcategory not found');
+    }
 
-  // Step 3: Find all products starting with that prefix
-  const existingProducts = await this.prisma.product.findMany({
-    where: {
-      productId: {
-        startsWith: `${baseProductId}-`,
+    // Step 2: Use subCategory.subCategoryId as base prefix
+    const baseProductId = subCategory.subCategoryId; // e.g., "MATCH-BAT"
+
+    // Step 3: Find all products starting with that prefix
+    const existingProducts = await this.prisma.product.findMany({
+      where: {
+        productId: {
+          startsWith: `${baseProductId}-`,
+        },
       },
-    },
-  });
+    });
 
-  // Step 4: Extract the max numeric suffix
-  let maxSuffix = 0;
-  for (const product of existingProducts) {
-    const match = product.productId.match(/-(\d{5})$/); // 5-digit suffix
-    if (match) {
-      const suffix = parseInt(match[1], 10);
-      if (suffix > maxSuffix) {
-        maxSuffix = suffix;
+    // Step 4: Extract the max numeric suffix
+    let maxSuffix = 0;
+    for (const product of existingProducts) {
+      const match = product.productId.match(/-(\d{5})$/); // 5-digit suffix
+      if (match) {
+        const suffix = parseInt(match[1], 10);
+        if (suffix > maxSuffix) {
+          maxSuffix = suffix;
+        }
       }
+    }
+
+    const nextNumber = maxSuffix + 1;
+    const paddedNumber = String(nextNumber).padStart(5, '0');
+
+    // Step 5: Final product ID
+    const productId = `${baseProductId}-${paddedNumber}`; // e.g., MATCH-BAT-00001
+
+    // Step 6: Create Product
+    try {
+      return await this.prisma.product.create({
+        data: {
+          productId,
+          productName,
+          productDescription,
+          HSN,
+          unit,
+          gstRate,
+          categoryId: Number(categoryId),
+          subCategoryId: Number(subCategoryId),
+        },
+      });
+    } catch (error) {
+      console.error('Failed to create product:', error);
+      throw new BadRequestException('Failed to create product');
     }
   }
 
-  const nextNumber = maxSuffix + 1;
-  const paddedNumber = String(nextNumber).padStart(5, '0');
-
-  // Step 5: Final product ID
-  const productId = `${baseProductId}-${paddedNumber}`; // e.g., MATCH-BAT-00001
-
-  // Step 6: Create Product
-  try {
-    return await this.prisma.product.create({
-      data: {
-        productId,
-        productName,
-        productDescription,
-        HSN,
-        unit,
-        gstRate,
-        categoryId: Number(categoryId),
-        subCategoryId: Number(subCategoryId),
-      },
-    });
-  } catch (error) {
-    console.error('Failed to create product:', error);
-    throw new BadRequestException('Failed to create product');
+  async countProducts() {
+    return this.prisma.product.count();
   }
-}
-
 
   async getProducts() {
     return this.prisma.product.findMany({
@@ -150,7 +153,9 @@ async createProduct(createProductDto: CreateProductDto) {
       });
     } catch (error) {
       console.error('Error updating product:', error);
-      throw new BadRequestException(`Failed to update product: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update product: ${error.message}`,
+      );
     }
   }
 

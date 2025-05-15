@@ -84,6 +84,11 @@ async update(
 }
 
 
+ @Get('/count')
+  getTotalSites() {
+    return this.siteService.countSites();
+  }
+
    // Get sites by customer ID
    @Get('customer/:customerId')
    async findByCustomerId(@Param('customerId') customerId: string) {

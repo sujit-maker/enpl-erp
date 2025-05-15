@@ -8,134 +8,274 @@ import { getStatusFromDeliveryType } from './dto/status-mapper';
 export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
- async create(data: CreateInventoryDto) {
-  const inventory = await this.prisma.inventory.create({
-    data: {
-      vendor: { connect: { id: data.vendorId } },
-      purchaseDate: new Date(data.purchaseDate),
-      purchaseInvoice: data.purchaseInvoice,
-      creditTerms: data.creditTerms,
-      dueDate: data.dueDate,
-      invoiceNetAmount: data.invoiceNetAmount,
-      gstAmount: data.gstAmount,
-      invoiceGrossAmount: data.invoiceGrossAmount,
-      status: data.status,
-    },
-  });
-
-  if (data.products && data.products.length > 0) {
-    const productInventoryData = await Promise.all(
-      data.products.flatMap(async (product) => {
-        // Validate product existence
-        const existingProduct = await this.prisma.product.findUnique({
-          where: { id: product.productId },
-        });
-
-        if (!existingProduct) {
-          throw new Error(`Product with productId ${product.productId} not found`);
-        }
-
-        // Split serial numbers
-        const serials = product.serialNumber
-          .split(',')
-          .map((sn) => sn.trim())
-          .filter((sn) => sn !== '');
-
-        return serials.map((serialNumber) => ({
-          productId: existingProduct.id,
-          make: product.make,
-          model: product.model,
-          inventoryId: inventory.id,
-          serialNumber,
-          macAddress: product.macAddress,
-          warrantyPeriod: product.warrantyPeriod,
-          purchaseRate: product.purchaseRate,
-        }));
-      })
-    );
-
-    // Flatten the nested arrays from Promise.all
-    const flatProductInventoryData = productInventoryData.flat();
-
-    await this.prisma.productInventory.createMany({
-      data: flatProductInventoryData,
+  async create(data: CreateInventoryDto) {
+    const inventory = await this.prisma.inventory.create({
+      data: {
+        vendor: { connect: { id: data.vendorId } },
+        purchaseDate: new Date(data.purchaseDate),
+        purchaseInvoice: data.purchaseInvoice,
+        creditTerms: data.creditTerms,
+        dueDate: data.dueDate,
+        invoiceNetAmount: data.invoiceNetAmount,
+        gstAmount: data.gstAmount,
+        invoiceGrossAmount: data.invoiceGrossAmount,
+       dueAmount: Number(data.invoiceGrossAmount),
+        status: data.status,
+      },
     });
+
+    if (data.products && data.products.length > 0) {
+      const productInventoryData = await Promise.all(
+        data.products.flatMap(async (product) => {
+          // Validate product existence
+          const existingProduct = await this.prisma.product.findUnique({
+            where: { id: product.productId },
+          });
+
+          if (!existingProduct) {
+            throw new Error(
+              `Product with productId ${product.productId} not found`,
+            );
+          }
+
+          // Split serial numbers
+          const serials = product.serialNumber
+            .split(',')
+            .map((sn) => sn.trim())
+            .filter((sn) => sn !== '');
+
+          return serials.map((serialNumber) => ({
+            productId: existingProduct.id,
+            make: product.make,
+            model: product.model,
+            inventoryId: inventory.id,
+            serialNumber,
+            macAddress: product.macAddress,
+            warrantyPeriod: product.warrantyPeriod,
+            purchaseRate: product.purchaseRate,
+          }));
+        }),
+      );
+
+      // Flatten the nested arrays from Promise.all
+      const flatProductInventoryData = productInventoryData.flat();
+
+      await this.prisma.productInventory.createMany({
+        data: flatProductInventoryData,
+      });
+    }
+
+    return inventory;
   }
 
-  return inventory;
+  async applyVendorPayment(purchaseInvoiceNo: string, paymentAmount: number) {
+  // Get the inventory
+  const inventory = await this.prisma.inventory.findUnique({
+    where: { purchaseInvoice: purchaseInvoiceNo },
+  });
+
+  if (!inventory) throw new Error('Invoice not found');
+
+  const newDueAmount = (inventory.dueAmount || 0) - paymentAmount;
+
+  await this.prisma.inventory.update({
+    where: { purchaseInvoice: purchaseInvoiceNo },
+    data: { dueAmount: newDueAmount < 0 ? 0 : newDueAmount }, // No negative dues
+  });
+
+  // Optionally, record the payment somewhere else if needed
 }
 
 
   // Ensure that the inventory update logic is correctly updating the fields
- async update(id: number, data: UpdateInventoryDto) {
-  const inventory = await this.prisma.inventory.findUnique({ where: { id } });
-  if (!inventory) throw new NotFoundException('Inventory not found');
+  async update(id: number, data: UpdateInventoryDto) {
+    const inventory = await this.prisma.inventory.findUnique({ where: { id } });
+    if (!inventory) throw new NotFoundException('Inventory not found');
 
-  const { vendorId, purchaseDate, purchaseInvoice, creditTerms, dueDate, invoiceNetAmount, gstAmount, invoiceGrossAmount, status, products } = data;
+    const {
+      vendorId,
+      purchaseDate,
+      purchaseInvoice,
+      creditTerms,
+      dueDate,
+      invoiceNetAmount,
+      gstAmount,
+      invoiceGrossAmount,
+      status,
+      products,
+    } = data;
 
- const updatedInventoryData: any = {
-  updatedAt: new Date().toISOString(),
-};
+    const updatedInventoryData: any = {
+      updatedAt: new Date().toISOString(),
+    };
 
-if (purchaseDate) updatedInventoryData.purchaseDate = new Date(purchaseDate).toISOString();
-if (purchaseInvoice) updatedInventoryData.purchaseInvoice = purchaseInvoice;
-if (creditTerms) updatedInventoryData.creditTerms = creditTerms;
-if (dueDate) updatedInventoryData.dueDate = new Date(dueDate).toISOString();
-if (invoiceNetAmount !== undefined) updatedInventoryData.invoiceNetAmount = invoiceNetAmount;
-if (gstAmount !== undefined) updatedInventoryData.gstAmount = gstAmount;
-if (invoiceGrossAmount !== undefined) updatedInventoryData.invoiceGrossAmount = invoiceGrossAmount;
-if (status) updatedInventoryData.status = status;
-if (vendorId) updatedInventoryData.vendor = { connect: { id: vendorId } };
+    if (purchaseDate)
+      updatedInventoryData.purchaseDate = new Date(purchaseDate).toISOString();
+    if (purchaseInvoice) updatedInventoryData.purchaseInvoice = purchaseInvoice;
+    if (creditTerms) updatedInventoryData.creditTerms = creditTerms;
+    if (dueDate) updatedInventoryData.dueDate = new Date(dueDate).toISOString();
+    if (invoiceNetAmount !== undefined)
+      updatedInventoryData.invoiceNetAmount = invoiceNetAmount;
+    if (gstAmount !== undefined) updatedInventoryData.gstAmount = gstAmount;
+    if (invoiceGrossAmount !== undefined)
+      updatedInventoryData.invoiceGrossAmount = invoiceGrossAmount;
+    if (status) updatedInventoryData.status = status;
+    if (vendorId) updatedInventoryData.vendor = { connect: { id: vendorId } };
 
-
-  await this.prisma.inventory.update({
-    where: { id },
-    data: updatedInventoryData,
-  });
-
-  if (products && products.length > 0) {
-    // Delete all old productInventory entries for this inventory
-    await this.prisma.productInventory.deleteMany({
-      where: { inventoryId: id },
+    await this.prisma.inventory.update({
+      where: { id },
+      data: updatedInventoryData,
     });
 
-    const productInventoryData = await Promise.all(
-      products.flatMap(async (product) => {
-        const existingProduct = await this.prisma.product.findUnique({
-          where: { id: product.productId },
-        });
+    if (products && products.length > 0) {
+      // Delete all old productInventory entries for this inventory
+      await this.prisma.productInventory.deleteMany({
+        where: { inventoryId: id },
+      });
 
-        if (!existingProduct) {
-          throw new Error(`Product with productId ${product.productId} not found`);
-        }
+      const productInventoryData = await Promise.all(
+        products.flatMap(async (product) => {
+          const existingProduct = await this.prisma.product.findUnique({
+            where: { id: product.productId },
+          });
 
-        const serials = product.serialNumber
-          .split(',')
-          .map((sn) => sn.trim())
-          .filter((sn) => sn !== '');
+          if (!existingProduct) {
+            throw new Error(
+              `Product with productId ${product.productId} not found`,
+            );
+          }
 
-        return serials.map((serialNumber) => ({
-          productId: existingProduct.id,
-          make: product.make,
-          model: product.model,
-          inventoryId: id,
-          serialNumber,
-          macAddress: product.macAddress,
-          warrantyPeriod: product.warrantyPeriod,
-          purchaseRate: product.purchaseRate,
-        }));
-      })
-    );
+          const serials = product.serialNumber
+            .split(',')
+            .map((sn) => sn.trim())
+            .filter((sn) => sn !== '');
 
-    const flatProductInventoryData = productInventoryData.flat();
+          return serials.map((serialNumber) => ({
+            productId: existingProduct.id,
+            make: product.make,
+            model: product.model,
+            inventoryId: id,
+            serialNumber,
+            macAddress: product.macAddress,
+            warrantyPeriod: product.warrantyPeriod,
+            purchaseRate: product.purchaseRate,
+          }));
+        }),
+      );
 
-    await this.prisma.productInventory.createMany({
-      data: flatProductInventoryData,
-    });
+      const flatProductInventoryData = productInventoryData.flat();
+
+      await this.prisma.productInventory.createMany({
+        data: flatProductInventoryData,
+      });
+    }
+
+    return this.findOne(id);
   }
 
-  return this.findOne(id);
+  async getTotalPurchaseRate(): Promise<number> {
+    const allProductInventories = await this.prisma.productInventory.findMany({
+      where: {
+        inventory: {
+          status: {
+            not: 'Purchase Return',
+          },
+        },
+      },
+      select: { purchaseRate: true },
+    });
+
+    const total = allProductInventories.reduce((sum, item) => {
+      const rate = parseFloat(item.purchaseRate);
+      return sum + (isNaN(rate) ? 0 : rate);
+    }, 0);
+
+    return total;
+  }
+
+  async getTotalPurchaseRateSold(): Promise<number> {
+    const allProductInventories = await this.prisma.productInventory.findMany({
+      where: {
+        inventory: {
+          status: 'Sold',
+        },
+      },
+      select: {
+        purchaseRate: true,
+      },
+    });
+
+    const total = allProductInventories.reduce((sum, item) => {
+      const rate = parseFloat(item.purchaseRate);
+      return sum + (isNaN(rate) ? 0 : rate);
+    }, 0);
+
+    return total;
+  }
+
+
+ async getTotalDemoOut(): Promise<number> {
+  const count = await this.prisma.productInventory.count({
+    where: {
+      inventory: {
+        status: 'Demo Out',
+      },
+    },
+  });
+
+  return count;
 }
+
+
+
+ async getTotalDueAmout(): Promise<number> {
+  const allDueAmount = await this.prisma.inventory.findMany({
+    select: {
+      dueAmount: true,
+    },
+  });
+
+  const total = allDueAmount.reduce((sum, item) => {
+    const due = item.dueAmount ?? 0; 
+    return sum + due;
+  }, 0);
+
+  return total;
+}
+
+
+  async getTotalPurchaseRestSold(): Promise<number> {
+    const allProductInventories = await this.prisma.productInventory.findMany({
+      where: {
+        inventory: {
+          status: {
+            not: 'Sold',
+          },
+        },
+      },
+      select: {
+        purchaseRate: true,
+      },
+    });
+
+    const total = allProductInventories.reduce((sum, item) => {
+      const rate = parseFloat(item.purchaseRate);
+      return sum + (isNaN(rate) ? 0 : rate);
+    }, 0);
+
+    return total;
+  }
+
+  async getUniquePurchaseInvoiceCount(): Promise<number> {
+    const uniqueInvoices = await this.prisma.inventory.findMany({
+      distinct: ['purchaseInvoice'],
+      select: {
+        purchaseInvoice: true,
+      },
+    });
+
+    return uniqueInvoices.length;
+  }
 
   async updateStatusBySerialOrMac(
     serialNumber: string,

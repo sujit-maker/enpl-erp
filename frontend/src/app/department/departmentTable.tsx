@@ -107,108 +107,85 @@ const DepartmentTable: React.FC = () => {
       <div className="flex-1 p-3 overflow-auto lg:ml-72 "> 
         <div className="flex justify-between items-center mb-5 mt-16">
           <button
-            onClick={() => openModal()}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Add Department
-          </button>
+  onClick={() => openModal()}
+  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+>
+   Add Department
+</button>
+
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-          <table className="min-w-[400px] w-full text-center border-collapse border border-gray-200">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border border-gray-300">Id</th>
-                <th className="border border-gray-300">
-                  Department Name
-                </th>
-                <th className="border border-gray-300  py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={index}>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Skeleton height={20} width={50} />
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Skeleton height={20} width={150} />
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Skeleton height={20} width={100} />
-                    </td>
-                  </tr>
-                ))
-              ) : departments.length > 0 ? (
-                departments.map((department) => (
-                  <tr key={department.id} className="hover:bg-gray-100">
-                    <td className="border border-gray-300 px-4 py-2">
-                      {department.id}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {department.departmentName}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <button
-                        onClick={() => openModal(department)}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 mr-2"
-                      >
-                        <FaEdit className="inline-block" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(department.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        <FaTrashAlt className="inline-block" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="px-4 py-2 text-gray-500">
-                    No departments available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+         <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+    <tr>
+      <th className="py-3 px-4 text-center">ID</th>
+      <th className="py-3 px-4 text-center">Department Name</th>
+      <th className="py-3 px-4 text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {departments.map((department) => (
+      <tr
+        key={department.id}
+        className="hover:bg-blue-50 transition-colors duration-200"
+      >
+        <td className="px-4 py-2 text-center">{department.id}</td>
+        <td className="px-4 py-2 text-center">{department.departmentName}</td>
+        <td className="px-4 py-2 text-center space-x-2">
+          <button
+            onClick={() => openModal(department)}
+            className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+          >
+            <FaEdit />
+          </button>
+          <button
+            onClick={() => handleDelete(department.id)}
+            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+          >
+            <FaTrashAlt />
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
         </div>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-lg w-11/12 md:w-1/3">
-            <h2 className="text-lg font-semibold mb-4">
-              {isEditing ? "Edit Department" : "Add Department"}
-            </h2>
-            <input
-  name="departmentName"
-  value={formData.departmentName}
-  onChange={(e) =>
-    setFormData({ ...formData, departmentName: e.target.value })
-  }
-  placeholder="Department Name"
-  className="w-full mb-3 p-2 border rounded"
-/>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm z-50">
+  <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fadeIn">
+    <h2 className="text-xl font-semibold mb-4 text-indigo-600">
+      {isEditing ? "Edit Department" : "Add Department"}
+    </h2>
+    <input
+      name="departmentName"
+      value={formData.departmentName}
+      onChange={(e) =>
+        setFormData({ ...formData, departmentName: e.target.value })
+      }
+      placeholder="Department Name"
+      className="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:ring focus:ring-indigo-300"
+    />
+    <div className="flex justify-end gap-2">
+      <button
+        onClick={isEditing ? handleUpdate : handleAdd}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl transition"
+      >
+        Save
+      </button>
+      <button
+        onClick={closeModal}
+        className="bg-gray-300 hover:bg-gray-400 px-5 py-2 rounded-xl transition"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
 
-            <div className="flex justify-end">
-              <button
-                onClick={isEditing ? handleUpdate : handleAdd}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
-              >
-                Save
-              </button>
-              <button
-                onClick={closeModal}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
