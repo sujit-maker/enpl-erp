@@ -88,10 +88,10 @@ const TaskTable: React.FC = () => {
     try {
       let response;
       if (userType === "SUPERADMIN") {
-        response = await axios.get("http://localhost:8000/tasks");
+        response = await axios.get("http://128.199.19.28:8000/tasks");
       } else {
         response = await axios.get(
-          `http://localhost:8000/tasks/user/${userId}`
+          `http://128.199.19.28:8000/tasks/user/${userId}`
         );
       }
 
@@ -108,7 +108,7 @@ const TaskTable: React.FC = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/departments"
+        "http://128.199.19.28:8000/departments"
       );
       setDepartments(response.data);
     } catch (error) {
@@ -119,7 +119,7 @@ const TaskTable: React.FC = () => {
   const fetchExecutives = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/users/executives"
+        "http://128.199.19.28:8000/users/executives"
       );
       setExecutives(response.data);
     } catch (error) {
@@ -130,7 +130,7 @@ const TaskTable: React.FC = () => {
   const fetchManagers = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/users/managers"
+        "http://128.199.19.28:8000/users/managers"
       );
       setManagers(response.data);
     } catch (error) {
@@ -141,7 +141,7 @@ const TaskTable: React.FC = () => {
   const fetchHodsByDepartment = async (departmentName: string) => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/users/hods/${departmentName}`
+        `http://128.199.19.28:8000/users/hods/${departmentName}`
       );
       setFormHods(response.data);
     } catch (error) {
@@ -153,7 +153,7 @@ const TaskTable: React.FC = () => {
   const fetchManagersByDepartment = async (departmentName: string) => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/users/manager/${departmentName}`
+        `http://128.199.19.28:8000/users/manager/${departmentName}`
       );
       setFormManagers(response.data);
     } catch (error) {
@@ -165,7 +165,7 @@ const TaskTable: React.FC = () => {
   const fetchExecutivesByDepartment = async (departmentName: string) => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/users/executive/${departmentName}`
+        `http://128.199.19.28:8000/users/executive/${departmentName}`
       );
       setFormExecutive(response.data);
     } catch (error) {
@@ -177,7 +177,7 @@ const TaskTable: React.FC = () => {
   const fetchServicesByDepartment = async (departmentId: number) => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/tasks/services/${departmentId}`
+        `http://128.199.19.28:8000/tasks/services/${departmentId}`
       );
       setFormServices(response.data);
     } catch (error) {
@@ -188,7 +188,7 @@ const TaskTable: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/customers");
+      const response = await axios.get("http://128.199.19.28:8000/customers");
       setCustomers(response.data);
     } catch (error) {
       console.log("Error fetching customers:", error);
@@ -198,7 +198,7 @@ const TaskTable: React.FC = () => {
   const fetchSitesByCustomer = async (customerId: number) => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/sites/customer/${customerId}`
+        `http://128.199.19.28:8000/sites/customer/${customerId}`
       );
       setSites(response.data);
     } catch (error) {
@@ -209,7 +209,7 @@ const TaskTable: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8000/tasks/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/tasks/${id}`);
       alert("Task deleted successfully!");
       fetchTasks();
     } catch (error) {
@@ -219,7 +219,7 @@ const TaskTable: React.FC = () => {
 
   const fetchAllHods = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/users/hods");
+      const response = await axios.get("http://128.199.19.28:8000/users/hods");
       setHods(response.data);
     } catch (error) {
       console.log("Error fetching all HODs:", error);
@@ -244,12 +244,12 @@ const TaskTable: React.FC = () => {
 
       if (isEditing) {
         await axios.put(
-          `http://localhost:8000/tasks/${formData.id}`,
+          `http://128.199.19.28:8000/tasks/${formData.id}`,
           sanitizedData
         );
         alert("Task updated successfully!");
       } else {
-        await axios.post("http://localhost:8000/tasks", sanitizedData);
+        await axios.post("http://128.199.19.28:8000/tasks", sanitizedData);
         alert("Task created successfully!");
       }
 

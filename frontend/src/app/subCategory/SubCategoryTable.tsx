@@ -40,7 +40,7 @@ const SubCategoryTable: React.FC = () => {
   // ✅ Fetch categories for the dropdown
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/category");
+      const response = await axios.get("http://128.199.19.28:8000/category");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -50,7 +50,7 @@ const SubCategoryTable: React.FC = () => {
   // ✅ Fetch subcategories for the table
   const fetchSubCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/subcategory");
+      const response = await axios.get("http://128.199.19.28:8000/subcategory");
       const filteredSubCategories = response.data.filter(
         (subCategory: SubCategory) =>
           subCategory.category?.categoryName && subCategory.subCategoryName
@@ -65,7 +65,7 @@ const SubCategoryTable: React.FC = () => {
     if (window.confirm("Are you sure you want to delete this subcategory?")) {
       try {
         await axios.delete(
-          `http://localhost:8000/subcategory/${subCategoryId}`
+          `http://128.199.19.28:8000/subcategory/${subCategoryId}`
         );
         alert("Subcategory deleted successfully!");
         fetchSubCategories(); // Re-fetch subcategories to update the table
@@ -125,7 +125,7 @@ const SubCategoryTable: React.FC = () => {
       if (selectedSubCategory) {
         // Updating existing subcategory
         await axios.put(
-          `http://localhost:8000/subcategory/${selectedSubCategory.id}`,
+          `http://128.199.19.28:8000/subcategory/${selectedSubCategory.id}`,
           {
             categoryId,
             subCategoryName,
@@ -134,7 +134,7 @@ const SubCategoryTable: React.FC = () => {
         alert("Subcategory updated successfully!");
       } else {
         // Creating new subcategory
-        await axios.post("http://localhost:8000/subcategory", {
+        await axios.post("http://128.199.19.28:8000/subcategory", {
           categoryId,
           subCategoryName,
           subCategoryId: newSubCategoryId,
