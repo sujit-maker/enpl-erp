@@ -60,13 +60,13 @@ export default function Dashboard() {
       label: 'Total No. of Vendors',
       count: counts.vendors,
       icon: <FaUsers className="text-4xl text-indigo-500" />,
-      bg: 'bg-indigo-100',
+      bg: 'bg-indigo-200',
     },
     {
       label: 'Total No. of Customers',
       count: counts.customers,
       icon: <FaStore className="text-4xl text-green-500" />,
-      bg: 'bg-green-100',
+      bg: 'bg-green-200',
     },
     {
       label: 'Total No. of Sites',
@@ -78,31 +78,31 @@ export default function Dashboard() {
       label: 'Total No. of Products',
       count: counts.products,
       icon: <FaBoxes className="text-4xl text-orange-500" />,
-      bg: 'bg-orange-100',
+      bg: 'bg-orange-200',
     },
     {
       label: 'Total Inventory Purchase Value',
       count: counts.purchaseRate,
       icon: <FaProductHunt className="text-4xl text-yellow-500" />,
-      bg: 'bg-yellow-100',
+      bg: 'bg-yellow-200',
     },
      {
       label: 'Total Inventory Sold Value',
       count: counts.soldPurchaseRate,
       icon: <FaPage4 className="text-4xl text-red-500" />,
-      bg: 'bg-red-100',
+      bg: 'bg-red-200',
     },
     {
       label: 'Total Inventory Stock Value',
       count: counts.restPurchaseRate,
       icon: <FaSwatchbook className="text-4xl text-red-500" />,
-      bg: 'bg-red-100',
+      bg: 'bg-red-200',
     },
     {
       label: 'Total No. of Purchase Invoices',
       count: counts.purchaseInvoice,
       icon: <FaInvision className="text-4xl text-red-500" />,
-      bg: 'bg-gray-200',
+      bg: 'bg-gray-400',
     },
     {
       label: 'Total Purchase Invoice Due Amount',
@@ -114,7 +114,7 @@ export default function Dashboard() {
       label: 'Total No. of Inventory on Demo',
       count: counts.demoOut,
       icon: <FaOutdent className="text-4xl text-red-500" />,
-      bg: 'bg-purple-300',
+      bg: 'bg-purple-400',
     },
   ];
 

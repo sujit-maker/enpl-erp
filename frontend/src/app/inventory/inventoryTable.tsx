@@ -126,7 +126,7 @@ const InventoryTable: React.FC = () => {
   }, [inventoryList, searchQuery]);
 
   const fetchInventory = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/inventory");
+    const res = await axios.get("http://localhost:8000/inventory");
     setInventoryList(res.data.reverse());
     const inventoryWithDuration = res.data.map((item: Inventory) => {
       const purchaseDate = new Date(item.purchaseDate);
@@ -143,12 +143,12 @@ const InventoryTable: React.FC = () => {
   };
 
   const fetchProducts = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/products");
+    const res = await axios.get("http://localhost:8000/products");
     setProducts(res.data);
   };
 
   const fetchVendors = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/vendors");
+    const res = await axios.get("http://localhost:8000/vendors");
     setVendors(res.data);
   };
 
@@ -274,12 +274,12 @@ const InventoryTable: React.FC = () => {
 
       if (formData.id) {
         await axios.put(
-          `http://128.199.19.28:8000/inventory/${formData.id}`,
+          `http://localhost:8000/inventory/${formData.id}`,
           payload
         );
         alert("Inventory updated successfully!");
       } else {
-        await axios.post("http://128.199.19.28:8000/inventory", payload);
+        await axios.post("http://localhost:8000/inventory", payload);
         alert("Inventory created successfully!");
       }
 

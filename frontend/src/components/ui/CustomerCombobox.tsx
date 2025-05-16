@@ -42,7 +42,7 @@ export function CustomerCombobox({
   React.useEffect(() => {
     async function fetchCustomers() {
       try {
-        const res = await fetch("http://128.199.19.28:8000/customers");
+        const res = await fetch("http://localhost:8000/customers");
         const data = await res.json();
         setCustomers(data);
       } catch (error) {

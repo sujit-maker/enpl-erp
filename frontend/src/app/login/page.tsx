@@ -3,13 +3,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; 
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -17,7 +17,7 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("http://128.199.19.28:8000/auth/login", {
+      const response = await fetch("http://localhost:8000/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -25,9 +25,7 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      if (!response.ok) {
-        throw new Error("Invalid credentials");
-      }
+      if (!response.ok) throw new Error("Invalid credentials");
 
       const data = await response.json();
       localStorage.setItem("access_token", data.access_token);
@@ -35,9 +33,12 @@ export default function LoginPage() {
       localStorage.setItem("userType", data.userType);
 
       toast.success("Successfully logged in!");
-
       setTimeout(() => {
-        router.push(data.userType === "HOD" || data.userType === "MANAGER" || data.userType === "EXECUTIVE" || data.userType === "SUPERADMIN" ? "/dashboard" : "/");
+        router.push(
+          ["HOD", "MANAGER", "EXECUTIVE", "SUPERADMIN"].includes(data.userType)
+            ? "/dashboard"
+            : "/"
+        );
       }, 1000);
     } catch (error: any) {
       setErrorMessage(error.message);
@@ -46,15 +47,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-400 to-purple-500 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6">Login</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl transition-all duration-500 ease-in-out">
+        {/* Logo + Company Name */}
+        <div className="flex items-center justify-center mb-6 space-x-3">
+          <img
+            src="https://media.licdn.com/dms/image/v2/C4E0BAQFx4JPxv8Cpjw/company-logo_200_200/company-logo_200_200/0/1673094179431/enplindia_logo?e=2147483647&v=beta&t=V1Ld3Ja-zCXFg7y1VlqEliyXmh1qVQoUTkAIo-7O4YM"
+            alt="ENPL Logo"
+            className="w-10 h-10 rounded-full shadow-md"
+          />
+          <h1 className="text-2xl font-bold text-indigo-700">ENPL India</h1>
+        </div>
 
-        {errorMessage && <p className="text-center text-red-500 mb-4">{errorMessage}</p>}
+        <h2 className="text-xl font-semibold text-center text-gray-800 mb-6">Welcome Back</h2>
+
+        {errorMessage && (
+          <p className="text-center text-red-500 mb-4 text-sm">{errorMessage}</p>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-600">
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
               Username
             </label>
             <input
@@ -63,12 +76,13 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+              placeholder="Enter your username"
+              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
           </div>
 
-          <div className="mb-4 relative">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-600">
+          <div className="mb-4">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <div className="relative">
@@ -78,7 +92,8 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 pr-10"
+                placeholder="Enter your password"
+                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md shadow-sm pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
               <button
                 type="button"
@@ -92,14 +107,14 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full py-2 mt-4 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+            className="w-full py-2 mt-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
           >
             Log In
           </button>
         </form>
       </div>
 
-      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={true} />
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
     </div>
   );
 }

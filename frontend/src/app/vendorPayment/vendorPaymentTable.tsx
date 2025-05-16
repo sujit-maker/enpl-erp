@@ -84,12 +84,12 @@ const initialFormState: VendorPayment = {
 
   const fetchPayments = async () => {
 
-    const res = await axios.get("http://128.199.19.28:8000/vendor-payment");
+    const res = await axios.get("http://localhost:8000/vendor-payment");
     setPayments(res.data.reverse());
   };
 
   const fetchVendors = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/vendors");
+    const res = await axios.get("http://localhost:8000/vendors");
     setVendors(res.data);
   };
 
@@ -154,13 +154,13 @@ const initialFormState: VendorPayment = {
     try {
       if (formData.id) {
         await axios.put(
-          `http://128.199.19.28:8000/vendor-payment/${formData.id}`,
+          `http://localhost:8000/vendor-payment/${formData.id}`,
           formData
         );
         alert("Payment updated sucessfully!");
       } else {
 
-        await axios.post("http://128.199.19.28:8000/vendor-payment", formData);
+        await axios.post("http://localhost:8000/vendor-payment", formData);
         alert("Payment added successfully!");
       }
       setFormData(initialFormState);
@@ -178,7 +178,7 @@ const initialFormState: VendorPayment = {
     );
     if (confirmed) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/vendor-payment/${id}`);
+        await axios.delete(`http://localhost:8000/vendor-payment/${id}`);
         alert("Payment deleted!");
         fetchPayments();
       } catch (err) {
@@ -346,7 +346,7 @@ const initialFormState: VendorPayment = {
                     setFormData((prev) => ({ ...prev, vendorId: val }));
                     try {
                       const res = await axios.get(
-                        `http://128.199.19.28:8000/inventory?vendorId=${val}`
+                        `http://localhost:8000/inventory?vendorId=${val}`
                       );
                       if (res.data && res.data.length > 0) {
                         setVendorInvoices(res.data);

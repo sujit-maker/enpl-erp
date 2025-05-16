@@ -35,7 +35,7 @@ const ServiceSubCategoryTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/servicecategory");
+      const response = await axios.get("http://localhost:8000/servicecategory");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -44,7 +44,7 @@ const ServiceSubCategoryTable: React.FC = () => {
 
   const fetchSubCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/servicesubcategory");
+      const response = await axios.get("http://localhost:8000/servicesubcategory");
       const filtered = response.data.filter(
         (sub: SubCategory) => sub.category?.categoryName && sub.subCategoryName
       );
@@ -57,7 +57,7 @@ const ServiceSubCategoryTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this subcategory?")) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/servicesubcategory/${id}`);
+        await axios.delete(`http://localhost:8000/servicesubcategory/${id}`);
         alert("Subcategory deleted successfully!");
         fetchSubCategories();
       } catch (error) {
@@ -75,14 +75,14 @@ const ServiceSubCategoryTable: React.FC = () => {
 
     try {
       if (selectedSubCategory) {
-        await axios.put(`http://128.199.19.28:8000/servicesubcategory/${selectedSubCategory.id}`, {
+        await axios.put(`http://localhost:8000/servicesubcategory/${selectedSubCategory.id}`, {
           serviceSubCatId,
           categoryId,
           subCategoryName,
         });
         alert("Subcategory updated successfully!");
       } else {
-        await axios.post("http://128.199.19.28:8000/servicesubcategory", {
+        await axios.post("http://localhost:8000/servicesubcategory", {
           serviceSubCatId,
           serviceCategoryId: categoryId,
           subCategoryName,

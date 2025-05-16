@@ -64,7 +64,7 @@ const SiteTable: React.FC = () => {
 
   const fetchSites = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/sites");
+      const response = await axios.get("http://localhost:8000/sites");
       setSites(response.data.reverse());
     } catch (error) {
       console.error("Error fetching sites:", error);
@@ -85,7 +85,7 @@ const SiteTable: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/customers");
+      const response = await axios.get("http://localhost:8000/customers");
       setCustomers(response.data);
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -174,7 +174,7 @@ const SiteTable: React.FC = () => {
     }
 
     try {
-      await axios.post("http://128.199.19.28:8000/sites", data, {
+      await axios.post("http://localhost:8000/sites", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -213,7 +213,7 @@ const SiteTable: React.FC = () => {
 
   try {
     await axios.put(
-      `http://128.199.19.28:8000/sites/${selectedSite.id}`,
+      `http://localhost:8000/sites/${selectedSite.id}`,
       data,
       {
         headers: {
@@ -236,7 +236,7 @@ const SiteTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this site?")) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/sites/${id}`);
+        await axios.delete(`http://localhost:8000/sites/${id}`);
         alert("Site deleted successfully!");
         fetchSites();
       } catch (error) {
@@ -321,7 +321,7 @@ const SiteTable: React.FC = () => {
                   <td className="p-2 border text-blue-900">
                     {site.gstpdf ? (
                       <a
-                        href={`http://128.199.19.28:8000/gst/${site.gstpdf}`}
+                        href={`http://localhost:8000/gst/${site.gstpdf}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
