@@ -20,6 +20,8 @@ const CategoryTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Category; direction: "asc" | "desc" } | null>(null);
+
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
@@ -39,6 +41,8 @@ const CategoryTable: React.FC = () => {
       console.error("Error fetching categories:", error);
     }
   };
+
+  
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
@@ -81,11 +85,11 @@ const CategoryTable: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-     await axios.put(`http://localhost:8000/category/${selectedCategory.id}`, {
-  categoryName: formData.categoryName,
-  categoryId: String(formData.categoryId), // ensure it's a string
-  subCategories: formData.subCategories,
-});
+      await axios.put(`http://localhost:8000/category/${selectedCategory.id}`, {
+        categoryName: formData.categoryName,
+        categoryId: String(formData.categoryId), // ensure it's a string
+        subCategories: formData.subCategories,
+      });
       alert("Category updated successfully!");
       setIsUpdateModalOpen(false);
       fetchCategories();
@@ -99,22 +103,41 @@ const CategoryTable: React.FC = () => {
     fetchCategories();
   }, []);
 
-  const filteredCategories = categories.filter((category) =>
-    category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  category.categoryId.toLowerCase().includes(searchTerm.toLowerCase())||
-    category.subCategories.some((subCategory) =>
-      subCategory.subCategoryName.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+  const filteredCategories = categories.filter(
+    (category) =>
+      category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      category.categoryId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      category.subCategories.some((subCategory) =>
+        subCategory.subCategoryName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      )
   );
+   const sortedCategories = [...filteredCategories].sort((a, b) => {
+  if (!sortConfig) return 0;
+  const key = sortConfig.key;
+  const direction = sortConfig.direction === "asc" ? 1 : -1;
+  return a[key].toString().localeCompare(b[key].toString()) * direction;
+});
+
+const requestSort = (key: keyof Category) => {
+  let direction: "asc" | "desc" = "asc";
+  if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    direction = "desc";
+  }
+  setSortConfig({ key, direction });
+};
 
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-  const currentCategories = filteredCategories.slice(
-    indexOfFirstUser,
-    indexOfLastUser
-  );
+  const currentCategories = sortedCategories.slice(indexOfFirstUser, indexOfLastUser);
+
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+ 
+
+
 
   return (
     <div className="flex h-screen mt-3">
@@ -129,30 +152,35 @@ const CategoryTable: React.FC = () => {
                 subCategories: [{ subCategoryName: "" }],
               });
             }}
-             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Category
           </button>
-         <div className="relative w-full md:w-64">
-                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-                     <FaSearch />
-                   </span>
-                   <input
-                     type="text"
-                     placeholder="Search..."
-                     value={searchTerm}
-                     onChange={(e) => setSearchTerm(e.target.value)}
-                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-                   />
-                 </div>
+          <div className="relative w-full md:w-64">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <FaSearch />
+            </span>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-            <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+            <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">Category ID</th>                
-                <th className="border border-gray-300 p-2">Category Name</th>
+              <th className="border border-gray-300 p-2 cursor-pointer" onClick={() => requestSort("categoryId")}>
+  Category ID {sortConfig?.key === "categoryId" ? (sortConfig.direction === "asc" ? "↑" : "↓") : "↕"}
+</th>
+<th className="border border-gray-300 p-2 cursor-pointer" onClick={() => requestSort("categoryName")}>
+  Category Name {sortConfig?.key === "categoryName" ? (sortConfig.direction === "asc" ? "↑" : "↓") : "↕"}
+</th>
+
                 <th className="border border-gray-300 p-2">Actions</th>
               </tr>
             </thead>
@@ -166,34 +194,36 @@ const CategoryTable: React.FC = () => {
                     <td className="border border-gray-300 p-2">
                       {category.categoryName}
                     </td>
-                   <td className="border border-gray-300 p-2 text-center">
-  <div className="flex justify-center items-center gap-3">
-    <button
-      onClick={() => {
-        setSelectedCategory(category);
-        setFormData({
-          categoryName: category.categoryName,
-          categoryId: category.categoryId,
-          subCategories: category.subCategories.map((sub) => ({
-            subCategoryName: sub.subCategoryName,
-          })),
-        });
-        setIsUpdateModalOpen(true);
-      }}
-      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Edit"
-    >
-      <FaEdit />
-    </button>
-    <button
-      onClick={() => handleDelete(category.id)}
-      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Delete"
-    >
-      <FaTrashAlt />
-    </button>
-  </div>
-</td>
+                    <td className="border border-gray-300 p-2 text-center">
+                      <div className="flex justify-center items-center gap-3">
+                        <button
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setFormData({
+                              categoryName: category.categoryName,
+                              categoryId: category.categoryId,
+                              subCategories: category.subCategories.map(
+                                (sub) => ({
+                                  subCategoryName: sub.subCategoryName,
+                                })
+                              ),
+                            });
+                            setIsUpdateModalOpen(true);
+                          }}
+                          className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                          title="Edit"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(category.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                          title="Delete"
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -268,8 +298,6 @@ const CategoryTable: React.FC = () => {
               className="border p-2 rounded mb-2 w-full"
             />
 
-          
-
             <div className="mt-4">
               <button
                 onClick={handleCreate}
@@ -302,7 +330,7 @@ const CategoryTable: React.FC = () => {
               }
               placeholder="Category Id"
               className="border p-2 rounded mb-2 w-full"
-                />
+            />
             <input
               type="text"
               value={formData.categoryName}
@@ -312,8 +340,6 @@ const CategoryTable: React.FC = () => {
               placeholder="Category Name"
               className="border p-2 rounded mb-2 w-full"
             />
-
-          
 
             <div className="mt-4">
               <button

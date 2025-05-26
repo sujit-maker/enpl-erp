@@ -94,14 +94,65 @@ const MaterialDeliveryForm: React.FC = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Change as needed
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const headers = [
+    { label: "Delivery Type", key: "deliveryType" },
+    { label: "Delivery Challan", key: "deliveryChallan" },
+    { label: "Sales Order No", key: "salesOrderNo" },
+    { label: "Quotation No", key: "quotationNo" },
+    { label: "Purchase Invoice No", key: "purchaseInvoiceNo" },
+    { label: "Ref Number", key: "refNumber" },
+    { label: "Customer Name", key: "customerName" },
+    { label: "Site Name", key: "siteName" },
+    { label: "Vendor Name", key: "vendorName" },
+    { label: "Serial Number", key: "serialNumber" },
+    { label: "Product", key: "product" },
+    { label: "MAC Address", key: "macAddress" },
+    { label: "Actions", key: "actions" },
+  ];
+
+  const sortedDeliveries = React.useMemo(() => {
+    if (!sortField) return deliveryList;
+
+    return [...deliveryList].sort((a, b) => {
+      let aField = a[sortField as keyof typeof a];
+      let bField = b[sortField as keyof typeof b];
+
+      // Handle undefined or null
+      if (aField === undefined || aField === null) aField = "";
+      if (bField === undefined || bField === null) bField = "";
+
+      // Check if fields are dates — adjust if you have date columns
+      if (
+        sortField.toLowerCase().includes("date") ||
+        sortField.toLowerCase().includes("challan")
+      ) {
+        const dateA = new Date(aField).getTime();
+        const dateB = new Date(bField).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      }
+
+      // Numeric compare if numbers
+      if (typeof aField === "number" && typeof bField === "number") {
+        return sortOrder === "asc" ? aField - bField : bField - aField;
+      }
+
+      // String compare fallback
+      return sortOrder === "asc"
+        ? String(aField).localeCompare(String(bField))
+        : String(bField).localeCompare(String(aField));
+    });
+  }, [deliveryList, sortField, sortOrder]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentDeliveries = deliveryList.slice(
+  const currentDeliveries = sortedDeliveries.slice(
     indexOfFirstItem,
     indexOfLastItem
   );
-  const totalPages = Math.ceil(deliveryList.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedDeliveries.length / itemsPerPage);
 
   const isSaleOrDemo =
     formData.deliveryType === "Sale" || formData.deliveryType === "Demo";
@@ -338,47 +389,50 @@ const MaterialDeliveryForm: React.FC = () => {
     }
   };
 
- const openModal = (delivery?: any) => {
-  if (delivery) {
-    const enrichedItems = (delivery.materialDeliveryItems || []).map(
-      (item: any) => {
-        const inv = inventory.find((i) => i.id === item.inventoryId);
+  const openModal = (delivery?: any) => {
+    if (delivery) {
+      const enrichedItems = (delivery.materialDeliveryItems || []).map(
+        (item: any) => {
+          const inv = inventory.find((i) => i.id === item.inventoryId);
 
-        return {
-          inventoryId: item.inventoryId || 0,
-          serialNumber: item.serialNumber || inv?.serialNumber || "",
-          macAddress: item.macAddress || inv?.macAddress || "",
-          productId: item.productId || inv?.productId || 0,
-          productName: inv?.product?.productName || "Unknown",
-          vendorId: delivery.vendorId || inv?.vendorId || undefined,
-          customerId: delivery.customerId || undefined,
-          siteId: delivery.siteId || undefined,
-        };
-      }
-    );
+          return {
+            inventoryId: item.inventoryId || 0,
+            serialNumber: item.serialNumber || inv?.serialNumber || "",
+            macAddress: item.macAddress || inv?.macAddress || "",
+            productId: item.productId || inv?.productId || 0,
+            productName: inv?.product?.productName || "Unknown",
+            vendorId: delivery.vendorId || inv?.vendorId || undefined,
+            customerId: delivery.customerId || undefined,
+            siteId: delivery.siteId || undefined,
+          };
+        }
+      );
 
-    setFormData({
-      id: delivery.id,
-      deliveryType: delivery.deliveryType || "",
-      refNumber: delivery.refNumber || "",
-      salesOrderNo: delivery.salesOrderNo || "",
-      quotationNo: delivery.quotationNo || "",
-      purchaseInvoiceNo: delivery.purchaseInvoiceNo || "",
-      customerId: delivery.customerId || 0,
-      siteId: delivery.siteId || 0,
-      vendorId: delivery.vendorId || 0,
-    });
+      setFormData({
+        id: delivery.id,
+        deliveryType: delivery.deliveryType || "",
+        refNumber: delivery.refNumber || "",
+        salesOrderNo: delivery.salesOrderNo || "",
+        quotationNo: delivery.quotationNo || "",
+        purchaseInvoiceNo: delivery.purchaseInvoiceNo || "",
+        customerId: delivery.customerId || 0,
+        siteId: delivery.siteId || 0,
+        vendorId: delivery.vendorId || 0,
+      });
 
-    setItems(enrichedItems.length ? enrichedItems : [{ serialNumber: "", macAddress: "", productId: 0 }]);
-  } else {
-    // Reset for new entry
-    setFormData(initialFormData);
-    setItems([{ serialNumber: "", macAddress: "", productId: 0 }]);
-  }
+      setItems(
+        enrichedItems.length
+          ? enrichedItems
+          : [{ serialNumber: "", macAddress: "", productId: 0 }]
+      );
+    } else {
+      // Reset for new entry
+      setFormData(initialFormData);
+      setItems([{ serialNumber: "", macAddress: "", productId: 0 }]);
+    }
 
-  setIsModalOpen(true);
-};
-
+    setIsModalOpen(true);
+  };
 
   const handleDelete = (id: any): void => {
     if (confirm("Are you sure you want to delete this delivery?")) {
@@ -395,8 +449,6 @@ const MaterialDeliveryForm: React.FC = () => {
     }
   };
 
-
-
   return (
     <>
       <div className="flex-1 p-6 overflow-auto lg:ml-72">
@@ -404,7 +456,7 @@ const MaterialDeliveryForm: React.FC = () => {
           {/* Add Delivery button */}
           <button
             onClick={() => openModal()}
-  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Delivery
           </button>
@@ -412,17 +464,17 @@ const MaterialDeliveryForm: React.FC = () => {
           {/* Search + Download grouped */}
           <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="relative w-full md:w-64">
-                      <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-                        <FaSearch />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-                      />
-                    </div>
+              <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <FaSearch />
+              </span>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+              />
+            </div>
             <button
               onClick={handleDownloadCSV}
               title="Download CSV"
@@ -434,24 +486,60 @@ const MaterialDeliveryForm: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-             <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+            <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr>
-                <th className="border p-2">Delivery Type</th>
-                <th className="border p-2">Delivery Challan</th>
-                <th className="border p-2">Sales Order No</th>
-                <th className="border p-2">Quotation No</th>
-                <th className="border p-2">Purchase Invoice No</th>
-                <th className="border p-2">Ref Number</th>
-                <th className="border p-2">Customer Name</th>
-                <th className="border p-2">Site Name</th>
-                <th className="border p-2">Vendor Name</th>
-                <th className="border p-2">Serial Number</th>
-                <th className="border p-2">Product</th>
-                <th className="border p-2">MAC Address</th>
-                <th className="border p-2">Actions</th>
+                {headers.map(({ label, key }) => (
+                  <th
+                    key={key}
+                    className={`border p-2 ${
+                      key !== "actions" ? "cursor-pointer select-none" : ""
+                    }`}
+                    onClick={() => {
+                      if (key === "actions") return; // no sorting on actions
+                      if (sortField === key) {
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField(key);
+                        setSortOrder("asc");
+                      }
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <div className="flex items-center justify-center space-x-1">
+                      <span>{label}</span>
+                      {key !== "actions" && (
+                        <span className="flex flex-col text-xs leading-[10px]">
+                          <span
+                            style={{
+                              color:
+                                sortField === key && sortOrder === "asc"
+                                  ? "black"
+                                  : "lightgray",
+                              lineHeight: 0,
+                            }}
+                          >
+                            ▲
+                          </span>
+                          <span
+                            style={{
+                              color:
+                                sortField === key && sortOrder === "desc"
+                                  ? "black"
+                                  : "lightgray",
+                              lineHeight: 0,
+                            }}
+                          >
+                            ▼
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
+
             <tbody>
               {currentDeliveries
                 .filter((delivery) => {
@@ -533,24 +621,24 @@ const MaterialDeliveryForm: React.FC = () => {
                         .join(", ") || "N/A"}
                     </td>
 
-                   <td className="border p-2 text-center">
-  <div className="flex justify-center items-center gap-3">
-    <button
-      onClick={() => openModal(delivery)}
-      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Edit"
-    >
-      <FaEdit />
-    </button>
-    <button
-      onClick={() => handleDelete(delivery.id)}
-      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Delete"
-    >
-      <FaTrashAlt />
-    </button>
-  </div>
-</td>
+                    <td className="border p-2 text-center">
+                      <div className="flex justify-center items-center gap-3">
+                        <button
+                          onClick={() => openModal(delivery)}
+                          className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                          title="Edit"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(delivery.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                          title="Delete"
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>

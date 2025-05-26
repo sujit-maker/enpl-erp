@@ -6,7 +6,7 @@ import { PencilLine } from "lucide-react";
 import { VendorCombobox } from "@/components/ui/VendorCombobox";
 import { ProductCombobox } from "@/components/ui/ProductCombobox";
 import Papa from "papaparse";
-import { FaDownload, FaSearch } from "react-icons/fa"; // FontAwesome icon for download
+import { FaDownload, FaSearch } from "react-icons/fa";
 
 interface ProductInventory {
   productId: number;

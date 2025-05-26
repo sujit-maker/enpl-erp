@@ -24,6 +24,8 @@ import { InventoryModule } from './inventory/inventory.module';
 import { MaterialDeliveryModule } from './material-delivery/material-delivery.module';
 import { ServicecontractModule } from './servicecontract/servicecontract.module';
 import { VendorPaymentModule } from './vendor-payment/vendor-payment.module';
+import { TicketsModule } from './tickets/tickets.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { VendorPaymentModule } from './vendor-payment/vendor-payment.module';
     MaterialDeliveryModule,
     ServicecontractModule,
     VendorPaymentModule,
+    TicketsModule,
+    MessagesModule,
   ],
   controllers: [ServiceController, CustomerController, ServiceCategoryController, InventoryController],
   providers: [ServiceService, ServiceSubCategoryService, InventoryService],

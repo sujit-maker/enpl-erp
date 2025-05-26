@@ -1,35 +1,30 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import {
-  BiUserCircle,
-  BiCategory,
-  BiStoreAlt,
-  BiTask,
-  BiSolidDashboard,
-} from "react-icons/bi";
-import {
-  ChevronDown,
-  ChevronUp,
-  Menu,
-  Settings,
-  X,
-  LogOut,
-  Settings2,
-  Settings2Icon,
-  LucideSettings,
-} from "lucide-react";
-import { FaAmericanSignLanguageInterpreting, FaAssistiveListeningSystems, FaRegAddressBook, FaUser } from "react-icons/fa";
-import { useAuth } from "../hooks/useAuth";
-import { useRouter } from "next/navigation";
-
-export function AppSidebar() {
+  "use client";
+  import React, { useEffect, useState } from "react";
+  import {
+    BiCategory,
+    BiStoreAlt,
+    BiTask,
+    BiSolidDashboard,
+  } from "react-icons/bi";
+  import {
+    ChevronDown,
+    ChevronUp,
+    Menu,
+    X,
+    LogOut,
+    LucideSettings,
+  } from "lucide-react";
+  import { FaRegAddressBook, FaTicketAlt, FaUser } from "react-icons/fa";
+  import { useAuth } from "../hooks/useAuth";
+  import { useRouter } from "next/navigation";
+  
+  export function AppSidebar() {
   const { userType } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
   const [addressBookOpen, setAddressBookOpen] = useState(false);
-
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -66,7 +61,7 @@ export function AppSidebar() {
     router.push("/");
   };
 
-  return (
+    return (
     <div className="flex h-screen flex-col">
       {/* Header with Logout */}
       <div className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-400 p-4 shadow-lg flex justify-between items-center text-white">
@@ -115,8 +110,8 @@ export function AppSidebar() {
               ],
             },
             {
-              label: "Service Management",
-              icon: <LucideSettings className="w-7 h-7" />,
+              label: "Services",
+              icon: <LucideSettings className="w-6 h-6" />,
               open: serviceOpen,
               setOpen: setServiceOpen,
               items: [
@@ -126,9 +121,10 @@ export function AppSidebar() {
                 { label: "Service Contracts", url: "/servicecontract" },
               ],
             },
+            
             {
-              label: "Inventory Management",
-              icon: <BiCategory className="w-9 h-9" />,
+              label: "Inventory",
+              icon: <BiCategory className="w-6 h-6" />,
               open: inventoryOpen,
               setOpen: setInventoryOpen,
               items: [
@@ -171,7 +167,7 @@ export function AppSidebar() {
               )}
             </li>
           ))}
-
+          
           {/* Task Management */}
           <li>
             <a
@@ -182,6 +178,17 @@ export function AppSidebar() {
               {isSidebarOpen && <span>Task Management</span>}
             </a>
           </li>
+
+           <li>
+            <a
+              href="/ticket"
+              className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
+            >
+              <FaTicketAlt className="w-7 h-7 text-indigo-300 group-hover:text-white" />
+              {isSidebarOpen && <span>Support Ticket</span>}
+            </a>
+          </li>
+            
         </ul>
       </div>
     </div>

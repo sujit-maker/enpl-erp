@@ -8,7 +8,6 @@ import { ProductCombobox } from "@/components/ui/ProductCombobox";
 import Papa from "papaparse";
 import { FaDownload, FaSearch } from "react-icons/fa";
 
-
 interface ProductInventory {
   productId: number;
   serialNumber: string;
@@ -69,12 +68,54 @@ const PurchaseInvoiceTable: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+const [sortField, setSortField] = useState<string | null>(null);
+const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   const itemsPerPage = 10;
 
-  const paginatedInventory = filteredInventory.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+ const sortedInventory = React.useMemo(() => {
+  if (!sortField) return filteredInventory;
+
+  return [...filteredInventory].sort((a, b) => {
+    let aField = a[sortField as keyof typeof a];
+    let bField = b[sortField as keyof typeof b];
+
+    // Handle undefined or null
+    if (aField === undefined || aField === null) aField = "";
+    if (bField === undefined || bField === null) bField = "";
+
+    // If sorting by date (adjust keys if you want more precise detection)
+    if (sortField.toLowerCase().includes("date")) {
+      const dateA =
+        typeof aField === "string" || typeof aField === "number"
+          ? new Date(aField).getTime()
+          : 0;
+      const dateB =
+        typeof bField === "string" || typeof bField === "number"
+          ? new Date(bField).getTime()
+          : 0;
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    }
+
+    // Numeric compare if numbers
+    if (typeof aField === "number" && typeof bField === "number") {
+      return sortOrder === "asc" ? aField - bField : bField - aField;
+    }
+
+    // String compare fallback
+    return sortOrder === "asc"
+      ? String(aField).localeCompare(String(bField))
+      : String(bField).localeCompare(String(aField));
+  });
+}, [filteredInventory, sortField, sortOrder]);
+
+
+const paginatedInventory = sortedInventory.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+);
+
+
   const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
 
   useEffect(() => {
@@ -142,48 +183,47 @@ const PurchaseInvoiceTable: React.FC = () => {
   };
 
   const handleDownloadCSV = () => {
-  if (filteredInventory.length === 0) return;
+    if (filteredInventory.length === 0) return;
 
-  const csvData = filteredInventory.map((inventory) => {
-    const vendorName =
-      vendors.find((v) => v.id === inventory.vendorId)?.vendorName || "";
+    const csvData = filteredInventory.map((inventory) => {
+      const vendorName =
+        vendors.find((v) => v.id === inventory.vendorId)?.vendorName || "";
 
-    const productDetails = inventory.products
-      .map((product) => {
-        const productName =
-          products.find((p) => p.id === product.productId)?.productName || "";
-        return `${productName} (SN: ${product.serialNumber})`;
-      })
-      .join("; ");
+      const productDetails = inventory.products
+        .map((product) => {
+          const productName =
+            products.find((p) => p.id === product.productId)?.productName || "";
+          return `${productName} (SN: ${product.serialNumber})`;
+        })
+        .join("; ");
 
-    return {
-      PurchaseDate: inventory.purchaseDate,
-      PurchaseInvoice: inventory.purchaseInvoice,
-      Vendor: vendorName,
-      Status: inventory.status || "",
-      CreditTerms: inventory.creditTerms || "",
-      DueDate: inventory.dueDate || "",
-      InvoiceNetAmount: inventory.invoiceNetAmount || "",
-      GSTAmount: inventory.gstAmount || "",
-      InvoiceGrossAmount: inventory.invoiceGrossAmount || "",
-      PaidAmount: inventory.paidAmount || "",
-      DueAmount: inventory.dueAmount || "",
-      Duration: inventory.duration || "",
-      Products: productDetails,
-    };
-  });
+      return {
+        PurchaseDate: inventory.purchaseDate,
+        PurchaseInvoice: inventory.purchaseInvoice,
+        Vendor: vendorName,
+        Status: inventory.status || "",
+        CreditTerms: inventory.creditTerms || "",
+        DueDate: inventory.dueDate || "",
+        InvoiceNetAmount: inventory.invoiceNetAmount || "",
+        GSTAmount: inventory.gstAmount || "",
+        InvoiceGrossAmount: inventory.invoiceGrossAmount || "",
+        PaidAmount: inventory.paidAmount || "",
+        DueAmount: inventory.dueAmount || "",
+        Duration: inventory.duration || "",
+        Products: productDetails,
+      };
+    });
 
-  const csv = Papa.unparse(csvData);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.setAttribute("download", "purchase-invoices.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "purchase-invoices.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const fetchProducts = async () => {
     const res = await axios.get("http://localhost:8000/products");
@@ -314,52 +354,97 @@ const PurchaseInvoiceTable: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const headers = [
+  { label: "Purchased Date", key: "purchaseDate" },
+  { label: "P.Invoice No", key: "purchaseInvoice" },
+  { label: "Purchased From", key: "vendorName" },  // adjust if you have vendorName instead of vendorId
+  { label: "Invoice Amount", key: "invoiceAmount" },
+  { label: "GST Amount", key: "gstAmount" },
+  { label: "Gross Amount", key: "grossAmount" },
+  { label: "Credit Terms", key: "creditTerms" },
+  { label: "Due Date", key: "dueDate" },
+  { label: "Paid Amount", key: "paidAmount" },
+  { label: "Due Amount", key: "dueAmount" },
+  { label: "Status", key: "status" },
+  { label: "Age", key: "age" },
+  { label: "Actions", key: "actions" },  // usually no sorting on actions
+];
+
+
   return (
     <div className="flex-1 p-4 lg:ml-72 mt-20">
-     <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-2">
-
-    
- <div className="relative w-full md:w-64">
-           <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-             <FaSearch />
-           </span>
-           <input
-             type="text"
-             placeholder="Search..."
-             value={searchQuery}
-             onChange={(e) => setSearchQuery(e.target.value)}
-             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-           />
-         </div>
-  <button
-    onClick={handleDownloadCSV}
-    title="Download CSV"
-    className="text-blue-600 hover:text-blue-800 text-xl"
-  >
-    <FaDownload />
-  </button>
-</div>
-
+      <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-2">
+        <div className="relative w-full md:w-64">
+          <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+            <FaSearch />
+          </span>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+          />
+        </div>
+        <button
+          onClick={handleDownloadCSV}
+          title="Download CSV"
+          className="text-blue-600 hover:text-blue-800 text-xl"
+        >
+          <FaDownload />
+        </button>
+      </div>
 
       <div className="overflow-x-auto">
-          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
-            <tr>
-              <th className="p-2 border">Purchased Date</th>
-              <th className="p-2 border">P.Invoice No</th>
-              <th className="p-2 border">Purchased From</th>
-              <th className="p-2 border">Invoice Amount</th>
-              <th className="p-2 border">GST Amount</th>
-              <th className="p-2 border">Gross Amount</th>
-              <th className="p-2 border">Credit Terms </th>
-              <th className="p-2 border">Due Date</th>
-              <th className="p-2 border">Paid Amount</th>
-              <th className="p-2 border">Due Amount</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Age</th>
-              <th className="p-2 border">Actions</th>
-            </tr>
-          </thead>
+        <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+         <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+  <tr>
+    {headers.map(({ label, key }) => (
+      <th
+        key={key}
+        className={`p-2 border ${
+          key !== "actions" ? "cursor-pointer select-none" : ""
+        }`}
+        onClick={() => {
+          if (key === "actions") return; // no sorting on actions column
+
+          if (sortField === key) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+          } else {
+            setSortField(key);
+            setSortOrder("asc");
+          }
+          setCurrentPage(1);
+        }}
+      >
+        <div className="flex items-center justify-center space-x-1">
+          <span>{label}</span>
+          {key !== "actions" && (
+            <span className="flex flex-col text-xs leading-[10px]">
+              <span
+                style={{
+                  color: sortField === key && sortOrder === "asc" ? "black" : "lightgray",
+                  lineHeight: 0,
+                }}
+              >
+                ▲
+              </span>
+              <span
+                style={{
+                  color: sortField === key && sortOrder === "desc" ? "black" : "lightgray",
+                  lineHeight: 0,
+                }}
+              >
+                ▼
+              </span>
+            </span>
+          )}
+        </div>
+      </th>
+    ))}
+  </tr>
+</thead>
+
           <tbody>
             {paginatedInventory.map((inv) => (
               <tr key={inv.id}>

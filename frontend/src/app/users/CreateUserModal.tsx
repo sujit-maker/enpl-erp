@@ -65,7 +65,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
       };
 
       await axios.post("http://localhost:8000/users", newUser);
-
+    alert("user created successfully")
       fetchUsers();
       onHide();
       resetForm();

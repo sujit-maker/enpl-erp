@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PencilLine, Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { FaEdit, FaSearch, FaTrashAlt } from "react-icons/fa";
 
 interface CustomerContact {
@@ -159,8 +159,8 @@ const CustomerTable: React.FC = () => {
 
   const handleEdit = (customer: Customer) => {
     setFormData(customer);
-    setGstPdfFile(null); // clear any previous selection
-    setExistingGstFileName(customer.gstpdf || null); // save existing file name
+    setGstPdfFile(null);
+    setExistingGstFileName(customer.gstpdf || null);
     setIsCreateModalOpen(true);
   };
 
@@ -179,7 +179,7 @@ const CustomerTable: React.FC = () => {
       alert("Failed to delete customer.");
     }
   };
-
+ 
   const handleCreate = async () => {
     const required = [
       "customerName",
@@ -194,16 +194,16 @@ const CustomerTable: React.FC = () => {
       "creditTerms",
       "creditLimit",
     ];
-
+  
     const missing = required.filter(
       (f) => !formData[f as keyof Customer]?.toString().trim()
     );
-
+  
     if (missing.length > 0) {
       alert(`Missing fields: ${missing.join(", ")}`);
       return;
     }
-
+  
     const validContacts = formData.contacts.filter(
       (c) =>
         c.firstName.trim() || c.lastName.trim() || c.contactPhoneNumber.trim()
@@ -212,15 +212,15 @@ const CustomerTable: React.FC = () => {
     const validBanks = formData.bankDetails.filter(
       (b) => b.accountNumber.trim() || b.ifscCode.trim() || b.bankName.trim()
     );
-
+  
     if (validContacts.length === 0) {
       alert("Add at least one valid contact.");
       return;
     }
-
+  
     try {
       const form = new FormData();
-
+  
       // Append individual fields
       form.append("registerAddress", formData.registerAddress);
       form.append("gstNo", formData.gstNo);
@@ -233,7 +233,7 @@ const CustomerTable: React.FC = () => {
       form.append("remark", formData.remark);
       form.append("creditTerms", formData.creditTerms.toString());
       form.append("creditLimit", formData.creditLimit.toString());
-
+  
       // Append JSON-encoded nested data
       form.append("contacts", JSON.stringify(validContacts));
       form.append("bankDetails", JSON.stringify(validBanks));
@@ -243,7 +243,7 @@ const CustomerTable: React.FC = () => {
       if (gstpdfFile) {
         form.append("gstCertificate", gstpdfFile);
       }
-
+ 
       // Create or update
       if (formData.id) {
         await axios.put(
@@ -273,17 +273,18 @@ const CustomerTable: React.FC = () => {
       alert("Failed to submit. Please try again.");
     }
   };
-
-  const filteredCustomers = customers.filter((customer) =>
-  customer.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  customer.customerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  customer.emailId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  customer.city.toLowerCase().includes(searchQuery.toLowerCase())
-);
-
+                     
+  const filteredCustomers = customers.filter(
+    (customer) =>
+      customer.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.customerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.emailId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.city.toLowerCase().includes(searchQuery.toLowerCase()) 
+  );
 
   return (
     <div className="flex-1 p-6 overflow-auto lg:ml-72">
+
       <div className="flex justify-between items-center mb-5 mt-16">
         <button
           onClick={() => {
@@ -293,11 +294,12 @@ const CustomerTable: React.FC = () => {
               products: prev.products,
             }));
           }}
-           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
         >
           Add Customer
         </button>
-         <div className="relative w-full md:w-64">
+
+        <div className="relative w-full md:w-64">
           <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
             <FaSearch />
           </span>
@@ -310,10 +312,10 @@ const CustomerTable: React.FC = () => {
           />
         </div>
       </div>
-
+    
       <div className="overflow-x-auto">
-          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+        <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+          <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
               <th className="p-2 border">Customer ID</th>
               <th className="p-2 border">Customer Name</th>
@@ -359,23 +361,22 @@ const CustomerTable: React.FC = () => {
                     "No PDF"
                   )}
                 </td>
-               <td className="px-4 py-2 text-center space-x-2">
-  <button
-    onClick={() => handleEdit(cust)}
-    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-    title="Edit"
-  >
-    <FaEdit />
-  </button>
-  <button
-    onClick={() => handleDelete(cust.id)}
-    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-    title="Delete"
-  >
-    <FaTrashAlt />
-  </button>
-</td>
-
+                <td className="px-4 py-2 text-center space-x-2">
+                  <button
+                    onClick={() => handleEdit(cust)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                    title="Edit"
+                  >
+                    <FaEdit />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cust.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                    title="Delete"
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -547,7 +548,7 @@ const CustomerTable: React.FC = () => {
                       <Plus size={20} />
                     </button>
                   </div>
-                  
+
                   {formData.bankDetails.map((bank, i) => (
                     <div
                       key={i}

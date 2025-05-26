@@ -24,6 +24,11 @@ const SubCategoryTable: React.FC = () => {
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof SubCategory | null; direction: "asc" | "desc" }>({
+  key: null,
+  direction: "asc",
+});
+
   const [formData, setFormData] = useState({
     categoryId: 0, // Initially empty
     subCategoryName: "",
@@ -90,24 +95,24 @@ const SubCategoryTable: React.FC = () => {
 
   // Open Update Modal with selected subcategory details
   const openUpdateModal = (subCategory: SubCategory) => {
-  const fullId = subCategory.subCategoryId;
-  const categoryCode = subCategory.category.categoryId; // e.g., "MATCH"
-  
-  const suffix =
-    fullId.startsWith(`${categoryCode}-`) && fullId.length > categoryCode.length + 1
-      ? fullId.slice(categoryCode.length + 1) // grab only what's after `${categoryCode}-`
-      : "";
+    const fullId = subCategory.subCategoryId;
+    const categoryCode = subCategory.category.categoryId; // e.g., "MATCH"
 
-  setSelectedSubCategory(subCategory);
-  setFormData({
-    categoryId: subCategory.category.id,
-    subCategoryName: subCategory.subCategoryName,
-    subCategoryId: subCategory.subCategoryId,
-    subCategorySuffix: suffix,
-  });
-  setIsUpdateModalOpen(true);
-};
+    const suffix =
+      fullId.startsWith(`${categoryCode}-`) &&
+      fullId.length > categoryCode.length + 1
+        ? fullId.slice(categoryCode.length + 1) // grab only what's after `${categoryCode}-`
+        : "";
 
+    setSelectedSubCategory(subCategory);
+    setFormData({
+      categoryId: subCategory.category.id,
+      subCategoryName: subCategory.subCategoryName,
+      subCategoryId: subCategory.subCategoryId,
+      subCategorySuffix: suffix,
+    });
+    setIsUpdateModalOpen(true);
+  };
 
   // ✅ Corrected handleSubmit function for creating or updating subcategories
   const handleSubmit = async () => {
@@ -129,6 +134,7 @@ const SubCategoryTable: React.FC = () => {
           {
             categoryId,
             subCategoryName,
+            subCategoryId: newSubCategoryId,
           }
         );
         alert("Subcategory updated successfully!");
@@ -163,16 +169,35 @@ const SubCategoryTable: React.FC = () => {
     fetchSubCategories();
   }, []);
 
-  // Pagination logic
-  const filteredCategories = subCategories.filter(
+  const handleSort = (key: keyof SubCategory) => {
+  let direction: "asc" | "desc" = "asc";
+  if (sortConfig.key === key && sortConfig.direction === "asc") {
+    direction = "desc";
+  }
+  setSortConfig({ key, direction });
+};
+  const filteredCategories = subCategories
+  .filter(
     (subCategory) =>
-      subCategory.subCategoryName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      subCategory.category.categoryName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-  );
+      subCategory.subCategoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subCategory.category.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  .sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    const getValue = (obj: SubCategory, key: keyof SubCategory) => {
+      if (key === "category") return obj.category.categoryName.toLowerCase();
+      return (obj[key] as string)?.toString().toLowerCase();
+    };
+
+    const aVal = getValue(a, sortConfig.key);
+    const bVal = getValue(b, sortConfig.key);
+
+    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
 
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
@@ -189,36 +214,77 @@ const SubCategoryTable: React.FC = () => {
         <div className="flex justify-between items-center mb-5 mt-16">
           <button
             onClick={openCreateModal}
-             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Product Subcategory
           </button>
-         <div className="relative w-full md:w-64">
-                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-                     <FaSearch />
-                   </span>
-                   <input
-                     type="text"
-                     placeholder="Search..."
-                     value={searchTerm}
-                     onChange={(e) => setSearchTerm(e.target.value)}
-                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-                   />
-                 </div>
+          <div className="relative w-full md:w-64">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <FaSearch />
+            </span>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-      <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
-              <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">Sub Category Id</th>
-                <th className="border border-gray-300 p-2">Category Name</th>
-                <th className="border border-gray-300 p-2">
-                  Sub Category Name
-                </th>
-                <th className="border border-gray-300 p-2">Actions</th>
-              </tr>
-            </thead>
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+           <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+  <tr className="bg-gray-200">
+<th
+  className="border border-gray-300 p-2 cursor-pointer select-none"
+  onClick={() => handleSort("subCategoryId")}
+>
+  Sub Category Id{" "}
+  <span className="ml-1">
+    <span className={sortConfig.key === "subCategoryId" && sortConfig.direction === "asc" ? "font-bold text-blue-600" : "text-gray-400"}>
+      ▲
+    </span>
+    <span className={sortConfig.key === "subCategoryId" && sortConfig.direction === "desc" ? "font-bold text-blue-600" : "text-gray-400"}>
+      ▼
+    </span>
+  </span>
+</th>
+
+<th
+  className="border border-gray-300 p-2 cursor-pointer select-none"
+  onClick={() => handleSort("category")}
+>
+  Category Name{" "}
+  <span className="ml-1">
+    <span className={sortConfig.key === "category" && sortConfig.direction === "asc" ? "font-bold text-blue-600" : "text-gray-400"}>
+      ▲
+    </span>
+    <span className={sortConfig.key === "category" && sortConfig.direction === "desc" ? "font-bold text-blue-600" : "text-gray-400"}>
+      ▼
+    </span>
+  </span>
+</th>
+
+<th
+  className="border border-gray-300 p-2 cursor-pointer select-none"
+  onClick={() => handleSort("subCategoryName")}
+>
+  Sub Category Name{" "}
+  <span className="ml-1">
+    <span className={sortConfig.key === "subCategoryName" && sortConfig.direction === "asc" ? "font-bold text-blue-600" : "text-gray-400"}>
+      ▲
+    </span>
+    <span className={sortConfig.key === "subCategoryName" && sortConfig.direction === "desc" ? "font-bold text-blue-600" : "text-gray-400"}>
+      ▼
+    </span>
+  </span>
+</th>
+
+    <th className="border border-gray-300 p-2">Actions</th>
+  </tr>
+</thead>
+
             <tbody>
               {currentSubcategories.length > 0 ? (
                 currentSubcategories.map((subCategory) => (
@@ -236,24 +302,23 @@ const SubCategoryTable: React.FC = () => {
                       {subCategory.subCategoryName}
                     </td>
                     <td className="border border-gray-300 p-2 text-center">
-  <div className="flex justify-center items-center gap-3">
-    <button
-      onClick={() => openUpdateModal(subCategory)}
-      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Edit"
-    >
-      <FaEdit />
-    </button>
-    <button
-      onClick={() => handleDelete(subCategory.id)}
-      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Delete"
-    >
-      <FaTrashAlt />
-    </button>
-  </div>
-</td>
-
+                      <div className="flex justify-center items-center gap-3">
+                        <button
+                          onClick={() => openUpdateModal(subCategory)}
+                          className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                          title="Edit"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(subCategory.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                          title="Delete"
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (

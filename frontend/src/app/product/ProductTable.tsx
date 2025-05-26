@@ -30,6 +30,8 @@ const ProductTable: React.FC = () => {
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+const [sortField, setSortField] = useState<keyof Product | "category" | "subCategory">("productName");
+const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -137,24 +139,58 @@ const ProductTable: React.FC = () => {
     fetchSubCategories();
   }, []);
 
-  // Search & Pagination logic
-  const filteredProducts = products.filter(
-    (product) =>
-      product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productDescription
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-  );
+  // 1. Filter products based on searchTerm
+const filteredProducts = products.filter((product) =>
+  product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  product.productId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  product.productDescription.toLowerCase().includes(searchTerm.toLowerCase())
+);
 
-  const indexOfLastUser = currentPage * itemsPerPage;
-  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstUser,
-    indexOfLastUser
-  );
+// 2. Sort the filtered products
+const sortedProducts = [...filteredProducts].sort((a, b) => {
+  let aField: string | number = a[sortField as keyof Product] ?? "";
+  let bField: string | number = b[sortField as keyof Product] ?? "";
+
+  if (sortField === "category") {
+    aField = getCategoryName(a.categoryId);
+    bField = getCategoryName(b.categoryId);
+  }
+
+  if (sortField === "subCategory") {
+    aField = getSubCategoryName(a.subCategoryId);
+    bField = getSubCategoryName(b.subCategoryId);
+  }
+
+  const result =
+    typeof aField === "string"
+      ? aField.localeCompare(String(bField))
+      : (aField as number) - (bField as number);
+
+  return sortOrder === "asc" ? result : -result;
+});
+
+// 3. Paginate the sorted + filtered products
+const indexOfLastUser = currentPage * itemsPerPage;
+const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+const currentProducts = sortedProducts.slice(indexOfFirstUser, indexOfLastUser);
+
+const handleSort = (field: keyof Product | "category" | "subCategory") => {
+  if (field === sortField) {
+    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  } else {
+    setSortField(field);
+    setSortOrder("asc");
+  }
+};
+
+  
+
+
+  
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  
 
   return (
     <div className="flex h-screen mt-3">
@@ -162,24 +198,24 @@ const ProductTable: React.FC = () => {
         <div className="flex justify-between items-center mb-5 mt-16 gap-4 flex-wrap">
           <button
             onClick={() => setIsCreateModalOpen(true)}
-             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
           >
             Add Product
           </button>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
-<div className="relative w-full md:w-64">
-  <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-    <FaSearch />
-  </span>
-  <input
-    type="text"
-    placeholder="Search products..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-  />
-</div>
+            <div className="relative w-full md:w-64">
+              <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <FaSearch />
+              </span>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+              />
+            </div>
             <button
               onClick={handleDownloadCSV}
               className="text-blue-500 hover:text-blue-700 text-xl"
@@ -191,17 +227,51 @@ const ProductTable: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-            <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+            <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-200">
-                <th className="border border-gray-300 p-2">ProductId</th>
-                <th className="border border-gray-300 p-2">ProductName</th>
-                <th className="border border-gray-300 p-2">
-                  ProductDescription
-                </th>
-                <th className="border border-gray-300 p-2">HSN</th>
-                <th className="border border-gray-300 p-2">Category</th>
-                <th className="border border-gray-300 p-2">Sub Category</th>
+<th
+  onClick={() => handleSort("productId")}
+  className="border border-gray-300 p-2 cursor-pointer"
+>
+  ProductId
+  <span className="ml-1">{sortField === "productId" ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
+</th>
+<th
+  onClick={() => handleSort("productName")}
+  className="border border-gray-300 p-2 cursor-pointer"
+>
+  ProductName
+  <span className="ml-1">{sortField === "productName" ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
+</th>
+<th
+  onClick={() => handleSort("productDescription")}
+  className="border border-gray-300 p-2 cursor-pointer"
+>
+  ProductDescription
+  <span className="ml-1">{sortField === "productDescription" ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
+</th>
+<th
+  onClick={() => handleSort("HSN")}
+  className="border border-gray-300 p-2 cursor-pointer"
+>
+  HSN
+  <span className="ml-1">{sortField === "HSN" ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
+</th>
+<th
+  onClick={() => handleSort("category")}
+  className="border border-gray-300 p-2 cursor-pointer"
+>
+  Category
+  <span className="ml-1">{sortField === "category" ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
+</th>
+<th
+  onClick={() => handleSort("subCategory")}
+  className="border border-gray-300 p-2 cursor-pointer"
+>
+  Sub Category
+  <span className="ml-1">{sortField === "subCategory" ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
+</th>
                 <th className="border border-gray-300 p-2">Actions</th>
               </tr>
             </thead>
@@ -224,24 +294,24 @@ const ProductTable: React.FC = () => {
                   <td className="border border-gray-300 p-2">
                     {getSubCategoryName(product.subCategoryId)}
                   </td>
-                <td className="border border-gray-300 p-2 text-center">
-  <div className="flex justify-center items-center gap-3">
-    <button
-      onClick={() => handleEdit(product)}
-      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Edit"
-    >
-      <FaEdit />
-    </button>
-    <button
-      onClick={() => handleDelete(product.id)}
-      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-      title="Delete"
-    >
-      <FaTrashAlt />
-    </button>
-  </div>
-</td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    <div className="flex justify-center items-center gap-3">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                        title="Edit"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                        title="Delete"
+                      >
+                        <FaTrashAlt />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -16,20 +16,23 @@ model Department {
 }
 
 model Users {
-  id            Int          @id @default(autoincrement())
-  username      String       @unique
-  password      String
-  userType      String
-  firstName     String
-  lastName      String
-  contactNumber String
-  emailId       String       @unique
-  hodId         Int?
-  managerId     Int?
-  executiveId   Int?
-  departments   Department[] @relation("UserDepartments")
-  taskId        Int?
-  tasks         Task[]       @relation("TaskUsers")
+  id              Int          @id @default(autoincrement())
+  username        String       @unique
+  password        String
+  userType        String
+  firstName       String
+  lastName        String
+  contactNumber   String
+  emailId         String       @unique
+  hodId           Int?
+  managerId       Int?
+  executiveId     Int?
+  departments     Department[] @relation("UserDepartments")
+  taskId          Int?
+  tasks           Task[]       @relation("TaskUsers")
+  createdTickets  Ticket[]     @relation("CreatedTickets") // <- for createdBy
+  assignedTickets Ticket[]     @relation("AssignedTickets") // <- for assignedTo
+  sentMessages    Message[]    @relation("SentMessages") // back-relation for Message.sender
 }
 
 model Category {
@@ -67,8 +70,8 @@ model ServiceSubCategory {
 }
 
 model Product {
-  id                 Int                  @id @default(autoincrement())
-  productId          String               @unique
+  id                 Int    @id @default(autoincrement())
+  productId          String @unique
   productName        String
   productDescription String
   HSN                String
@@ -77,27 +80,26 @@ model Product {
   categoryId         Int
   subCategoryId      Int
 
-  category           Category             @relation(fields: [categoryId], references: [id])
-  subCategory        SubCategory          @relation(fields: [subCategoryId], references: [id])
-  productInventories ProductInventory[]   // ✅ Join table entries
-  materialDeliveryItem  MaterialDeliveryItem[] // ✅ Link to material delivery items
+  category             Category               @relation(fields: [categoryId], references: [id])
+  subCategory          SubCategory            @relation(fields: [subCategoryId], references: [id])
+  productInventories   ProductInventory[] // ✅ Join table entries
+  materialDeliveryItem MaterialDeliveryItem[] // ✅ Link to material delivery items
 
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime?            @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
-
 model MaterialDelivery {
-  id              Int     @id @default(autoincrement())
-  deliveryType    String
-  deliveryChallan String?
-  refNumber       String?
-  salesOrderNo   String?
-  quotationNo    String?
+  id                Int     @id @default(autoincrement())
+  deliveryType      String
+  deliveryChallan   String?
+  refNumber         String?
+  salesOrderNo      String?
+  quotationNo       String?
   purchaseInvoiceNo String?
-  siteId          Int?
-  customerId      Int?
-  vendorId        Int?
+  siteId            Int?
+  customerId        Int?
+  vendorId          Int?
 
   customer Customer? @relation(fields: [customerId], references: [id])
   vendor   Vendor?   @relation(fields: [vendorId], references: [id])
@@ -127,11 +129,11 @@ model MaterialDeliveryItem {
   updatedAt DateTime @updatedAt
 }
 
-model Inventory {   
-  id                 Int                  @id @default(autoincrement())
+model Inventory {
+  id                 Int      @id @default(autoincrement())
   vendorId           Int
   purchaseDate       DateTime
-  purchaseInvoice    String  @unique
+  purchaseInvoice    String   @unique
   creditTerms        String
   dueDate            String
   invoiceNetAmount   String
@@ -140,31 +142,30 @@ model Inventory {
   invoiceGrossAmount String
   status             String?
 
-  vendor             Vendor               @relation(fields: [vendorId], references: [id])
-  products           ProductInventory[]   
-  materialDeliveryItem  MaterialDeliveryItem[] 
-  vendorPayment    VendorPayment[]      
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  vendor               Vendor                 @relation(fields: [vendorId], references: [id])
+  products             ProductInventory[]
+  materialDeliveryItem MaterialDeliveryItem[]
+  vendorPayment        VendorPayment[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 }
 
-
 model ProductInventory {
-  id              Int       @id @default(autoincrement())
-  inventoryId     Int
-  productId       Int
-  make             String
-  model            String
-  serialNumber    String
-  macAddress      String
-  warrantyPeriod  String
-  purchaseRate    String
+  id             Int    @id @default(autoincrement())
+  inventoryId    Int
+  productId      Int
+  make           String
+  model          String
+  serialNumber   String
+  macAddress     String
+  warrantyPeriod String
+  purchaseRate   String
 
-  inventory       Inventory  @relation(fields: [inventoryId], references: [id])
-  product         Product    @relation(fields: [productId], references: [id])
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
+  product   Product   @relation(fields: [productId], references: [id])
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Service {
@@ -237,11 +238,11 @@ model VendorContact {
 }
 
 model Customer {
-  id              Int     @id @default(autoincrement())
-  customerCode    String? @unique
-  customerName    String
-  registerAddress String
-  gstNo           String  @unique
+  id               Int                @id @default(autoincrement())
+  customerCode     String?            @unique
+  customerName     String
+  registerAddress  String
+  gstNo            String             @unique
   emailId          String             @unique
   gstpdf           String?
   businessType     String?
@@ -261,8 +262,8 @@ model Customer {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
-  contacts         CustomerContact[]    @relation("CustomerContacts")
-
+  contacts CustomerContact[] @relation("CustomerContacts")
+  ticket   Ticket[]
   bankDetails      CustomerBankDetail[] @relation("CustomerBankDetails")
   serviceContracts ServiceContracts[]
 }
@@ -312,6 +313,7 @@ model Site {
   Task             Task[]
   ServiceContracts ServiceContracts[]
   materialDelivery MaterialDelivery[]
+  ticket  Ticket[]
 }
 
 model ServiceContracts {
@@ -352,27 +354,27 @@ model ContractInventory {
   updatedAt DateTime @updatedAt
 }
 
-model VendorPayment{
-  id              Int      @id @default(autoincrement())
-  vendorId        Int
-  inventoryId     Int?
+model VendorPayment {
+  id                 Int        @id @default(autoincrement())
+  vendorId           Int
+  inventoryId        Int?
   purchaseInvoiceNo  String
   invoiceGrossAmount String
-  dueAmount       String
-  paidAmount     String
-  balanceDue      String?
-  paymentDate    DateTime
-  paymentType String
-  referenceNo String
-  remark String
-  vendor          Vendor   @relation(fields: [vendorId], references: [id])
-  inventory       Inventory? @relation(fields: [inventoryId], references: [id])
-  
+  dueAmount          String
+  paidAmount         String
+  balanceDue         String?
+  paymentDate        DateTime
+  paymentType        String
+  referenceNo        String
+  remark             String
+  vendor             Vendor     @relation(fields: [vendorId], references: [id])
+  inventory          Inventory? @relation(fields: [inventoryId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-  model Task {
+model Task {
   id           Int    @id @default(autoincrement())
   serviceId    Int
   departmentId Int
@@ -395,4 +397,56 @@ model VendorPayment{
 
   // Many-to-many relation with Users
   assignedUsers Users[] @relation("TaskUsers")
+}
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  ticketId  String
+  title       String
+  description String
+  categoryName String
+  subCategoryName String
+  serviceCategoryName String
+  customerId    Int
+  siteId        Int
+  contactPerson  String
+  mobileNo       String
+  proposedDate   DateTime
+  priority      String
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  createdBy   Users @relation("CreatedTickets", fields: [createdById], references: [id])
+  createdById Int
+
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  site       Site       @relation(fields: [siteId], references: [id])
+
+  assignedTo   Users? @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  assignedToId Int?
+
+  messages Message[]
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  status    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  ticketId Int
+
+  sender   Users @relation("SentMessages", fields: [senderId], references: [id])
+  senderId Int
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  REOPENED
 }

@@ -7,7 +7,6 @@ import { VendorCombobox } from "@/components/ui/VendorCombobox";
 import Papa from "papaparse";
 import { FaDownload, FaSearch } from "react-icons/fa";
 
-
 interface Vendor {
   id: number;
   vendorName: string;
@@ -43,8 +42,8 @@ const initialFormState: VendorPayment = {
   createdAt: "",
   updatedAt: "",
 };
- 
-  const VendorPaymentTable: React.FC = () => {
+
+const VendorPaymentTable: React.FC = () => {
   const [payments, setPayments] = useState<VendorPayment[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorInvoices, setVendorInvoices] = useState<any[]>([]);
@@ -52,12 +51,29 @@ const initialFormState: VendorPayment = {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const itemsPerPage = 10;
 
+  const headers = [
+    { label: "Entry Date", key: "entryDate" },
+    { label: "Vendor", key: "vendorName" }, // special handling below
+    { label: "Payment Date", key: "paymentDate" },
+    { label: "Reference", key: "referenceNo" },
+    { label: "Gross Amount", key: "invoiceGrossAmount" },
+    { label: "Due Amount", key: "dueAmount" },
+    { label: "Paid Amount", key: "paidAmount" },
+    { label: "Balance Due", key: "balanceDue" },
+    { label: "Payment Mode", key: "paymentType" },
+    { label: "Remarks", key: "remark" },
+    { label: "Purchase Invoice", key: "purchaseInvoiceNo" },
+    { label: "Actions", key: "actions" },
+  ];
+
   const filtered = payments.filter((p) => {
-  const vendorName =
+    const vendorName =
       vendors.find((v) => v.id === p.vendorId)?.vendorName.toLowerCase() || "";
-  const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase();
     return (
       vendorName.includes(q) ||
       p.paymentDate.toLowerCase().includes(q) ||
@@ -70,12 +86,48 @@ const initialFormState: VendorPayment = {
     );
   });
 
-  const paginated = filtered.slice(
+  const sortedPayments = React.useMemo(() => {
+    if (!sortField) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (sortField === "vendorName") {
+        aValue = vendors.find((v) => v.id === a.vendorId)?.vendorName || "";
+        bValue = vendors.find((v) => v.id === b.vendorId)?.vendorName || "";
+      } else {
+        aValue = a[sortField as keyof VendorPayment] ?? "";
+        bValue = b[sortField as keyof VendorPayment] ?? "";
+      }
+
+      // Date fields handling (simple ISO or Date strings)
+      if (sortField.toLowerCase().includes("date")) {
+        const dateA = new Date(aValue).getTime();
+        const dateB = new Date(bValue).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      }
+
+      // Numeric fields: convert to number if possible
+      if (!isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
+        return sortOrder === "asc"
+          ? Number(aValue) - Number(bValue)
+          : Number(bValue) - Number(aValue);
+      }
+
+      // String comparison fallback
+      return sortOrder === "asc"
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    });
+  }, [filtered, sortField, sortOrder, vendors]);
+
+  const paginated = sortedPayments.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedPayments.length / itemsPerPage);
 
   useEffect(() => {
     fetchPayments();
@@ -83,7 +135,6 @@ const initialFormState: VendorPayment = {
   }, []);
 
   const fetchPayments = async () => {
-
     const res = await axios.get("http://localhost:8000/vendor-payment");
     setPayments(res.data.reverse());
   };
@@ -94,40 +145,38 @@ const initialFormState: VendorPayment = {
   };
 
   const handleDownloadCSV = () => {
-  if (!payments.length) return;
+    if (!payments.length) return;
 
-  const csvData = payments.map((payment) => {
-    const vendorName =
-      vendors.find((v) => v.id === payment.vendorId)?.vendorName || "N/A";
+    const csvData = payments.map((payment) => {
+      const vendorName =
+        vendors.find((v) => v.id === payment.vendorId)?.vendorName || "N/A";
 
-    return {
-      Vendor: vendorName,
-      PurchaseInvoiceNo: payment.purchaseInvoiceNo
-        ? `="${payment.purchaseInvoiceNo}"`
-        : "N/A",
-      InvoiceGrossAmount: payment.invoiceGrossAmount || "N/A",
-      DueAmount: payment.dueAmount || "N/A",
-      PaidAmount: payment.paidAmount || "N/A",
-      BalanceDue: payment.balanceDue || "N/A",
-      PaymentDate: payment.paymentDate || "N/A",
-      ReferenceNo: payment.referenceNo
-        ? `="${payment.referenceNo}"`
-        : "N/A",
-      PaymentType: payment.paymentType || "N/A",
-      Remark: payment.remark || "N/A",
-    };
-  });
+      return {
+        Vendor: vendorName,
+        PurchaseInvoiceNo: payment.purchaseInvoiceNo
+          ? `="${payment.purchaseInvoiceNo}"`
+          : "N/A",
+        InvoiceGrossAmount: payment.invoiceGrossAmount || "N/A",
+        DueAmount: payment.dueAmount || "N/A",
+        PaidAmount: payment.paidAmount || "N/A",
+        BalanceDue: payment.balanceDue || "N/A",
+        PaymentDate: payment.paymentDate || "N/A",
+        ReferenceNo: payment.referenceNo ? `="${payment.referenceNo}"` : "N/A",
+        PaymentType: payment.paymentType || "N/A",
+        Remark: payment.remark || "N/A",
+      };
+    });
 
-  const csv = Papa.unparse(csvData);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.setAttribute("download", "vendor-payments.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "vendor-payments.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -159,7 +208,6 @@ const initialFormState: VendorPayment = {
         );
         alert("Payment updated sucessfully!");
       } else {
-
         await axios.post("http://localhost:8000/vendor-payment", formData);
         alert("Payment added successfully!");
       }
@@ -196,57 +244,93 @@ const initialFormState: VendorPayment = {
 
   return (
     <div className="flex-1 p-4 lg:ml-72 mt-20">
-     <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
-  <button
-    onClick={() => openModal()}
-  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
-  >
-    Add Payment
-  </button>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+        <button
+          onClick={() => openModal()}
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+        >
+          Add Payment
+        </button>
 
-  {/* Group search input + download icon side by side */}
-  <div className="flex items-center gap-2 w-full md:w-auto">
-    <div className="relative w-full md:w-64">
-              <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-                <FaSearch />
-              </span>
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-              />
-            </div>
-    <button
-      onClick={handleDownloadCSV}
-      title="Download CSV"
-      className="text-blue-600 hover:text-blue-800 text-xl"
-    >
-      <FaDownload />
-    </button>
-  </div>
-</div>
-
+        {/* Group search input + download icon side by side */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <FaSearch />
+            </span>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+            />
+          </div>
+          <button
+            onClick={handleDownloadCSV}
+            title="Download CSV"
+            className="text-blue-600 hover:text-blue-800 text-xl"
+          >
+            <FaDownload />
+          </button>
+        </div>
+      </div>
 
       <div className="overflow-x-auto">
-         <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+        <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+          <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
-              <th className="p-2 border">Entry Date</th>
-              <th className="p-2 border">Vendor</th>
-              <th className="p-2 border">Payment Date</th>
-              <th className="p-2 border">Reference</th>
-              <th className="p-2 border">Gross Amount</th>
-              <th className="p-2 border">Due Amount</th>
-              <th className="p-2 border">Paid Amount</th>
-              <th className="p-2 border">Balance Due</th>
-              <th className="p-2 border">Payment Mode</th>
-              <th className="p-2 border">Remarks</th>
-              <th className="p-2 border">Purchase Invoice</th>
-              <th className="p-2 border text-center">Actions</th>
+              {headers.map(({ label, key }) => (
+                <th
+                  key={key}
+                  className={`p-2 border ${
+                    key !== "actions" ? "cursor-pointer select-none" : ""
+                  }`}
+                  onClick={() => {
+                    if (key === "actions") return; // no sorting on actions column
+                    if (sortField === key) {
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                    } else {
+                      setSortField(key);
+                      setSortOrder("asc");
+                    }
+                    setCurrentPage(1); // reset page when sorting changes
+                  }}
+                >
+                  <div className="flex items-center justify-center space-x-1 select-none">
+                    <span>{label}</span>
+                    {key !== "actions" && (
+                      <span className="flex flex-col text-xs leading-[10px]">
+                        <span
+                          style={{
+                            color:
+                              sortField === key && sortOrder === "asc"
+                                ? "black"
+                                : "lightgray",
+                            lineHeight: 0,
+                          }}
+                        >
+                          ▲
+                        </span>
+                        <span
+                          style={{
+                            color:
+                              sortField === key && sortOrder === "desc"
+                                ? "black"
+                                : "lightgray",
+                            lineHeight: 0,
+                          }}
+                        >
+                          ▼
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                </th>
+              ))}
             </tr>
           </thead>
+
           <tbody>
             {paginated.map((p) => (
               <tr key={p.id}>
@@ -375,7 +459,6 @@ const initialFormState: VendorPayment = {
                           invoiceGrossAmount: firstInvoice.invoiceGrossAmount,
                           dueAmount: dueAmount.toFixed(2),
                         }));
-
                       } else {
                         setVendorInvoices([]);
                         setFormData((prev) => ({
@@ -385,7 +468,6 @@ const initialFormState: VendorPayment = {
                           dueAmount: "",
                         }));
                       }
-
                     } catch (err) {
                       console.error("Failed to fetch inventory", err);
                       setVendorInvoices([]);
@@ -559,7 +641,6 @@ const initialFormState: VendorPayment = {
                 Save
               </button>
             </div>
-
           </div>
         </div>
       )}

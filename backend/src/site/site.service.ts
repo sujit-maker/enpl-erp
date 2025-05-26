@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';  
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 
@@ -7,74 +7,71 @@ import { UpdateSiteDto } from './dto/update-site.dto';
 export class SiteService {
   constructor(private prisma: PrismaService) {}
 
- async create(createSiteDto: CreateSiteDto, customerId: number) {
-  // 1. Get the customer to retrieve customerCode
-  const customer = await this.prisma.customer.findUnique({
-    where: { id: customerId },
-    select: { customerCode: true },
-  });
+  async create(createSiteDto: CreateSiteDto, customerId: number) {
+    // 1. Get the customer to retrieve customerCode
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { customerCode: true },
+    });
 
-  if (!customer) {
-    throw new Error('Customer not found');
-  }
-
-  const customerCode = customer.customerCode; // e.g., ENPL-CUS-0525-00001
-
-  // 2. Find the highest siteCode for this customer
-  const lastSite = await this.prisma.site.findFirst({
-    where: {
-      customerId: customerId,
-      siteCode: {
-        startsWith: `${customerCode}-S`, // Ensure it's specific to this customer
-      },
-    },
-    orderBy: {
-      siteCode: 'desc',
-    },
-    select: {
-      siteCode: true,
-    },
-  });
-
-  // 3. Determine next site serial
-  let nextSiteNumber = 1;
-  if (lastSite?.siteCode) {
-    const lastSerial = lastSite.siteCode.split('-S')[1]; // e.g., '00005'
-    if (lastSerial) {
-      nextSiteNumber = parseInt(lastSerial, 10) + 1;
+    if (!customer) {
+      throw new Error('Customer not found');
     }
-  }
 
-  // 4. Construct new siteCode
-  const nextSiteCode = `${customerCode}-S${String(nextSiteNumber).padStart(5, '0')}`;
+    const customerCode = customer.customerCode; // e.g., ENPL-CUS-0525-00001
 
-  // 5. Create the new site with generated siteCode
-  return this.prisma.site.create({
-    data: {
-      siteCode: nextSiteCode,
-      siteName: createSiteDto.siteName,
-      siteAddress: createSiteDto.siteAddress,
-      contactName: createSiteDto.contactName,
-      contactNumber: createSiteDto.contactNumber,
-      emailId: createSiteDto.emailId,
-      state: createSiteDto.state,
-      city: createSiteDto.city,
-      gstNo: createSiteDto.gstNo,
-      gstpdf: createSiteDto.gstpdf,
-      Customer: {
-        connect: { id: customerId },
+    // 2. Find the highest siteCode for this customer
+    const lastSite = await this.prisma.site.findFirst({
+      where: {
+        customerId: customerId,
+        siteCode: {
+          startsWith: `${customerCode}-S`, // Ensure it's specific to this customer
+        },
       },
-    },
-  });
-}
+      orderBy: {
+        siteCode: 'desc',
+      },
+      select: {
+        siteCode: true,
+      },
+    });
 
+    // 3. Determine next site serial
+    let nextSiteNumber = 1;
+    if (lastSite?.siteCode) {
+      const lastSerial = lastSite.siteCode.split('-S')[1]; // e.g., '00005'
+      if (lastSerial) {
+        nextSiteNumber = parseInt(lastSerial, 10) + 1;
+      }
+    }
+
+    // 4. Construct new siteCode
+    const nextSiteCode = `${customerCode}-S${String(nextSiteNumber).padStart(5, '0')}`;
+
+    // 5. Create the new site with generated siteCode
+    return this.prisma.site.create({
+      data: {
+        siteCode: nextSiteCode,
+        siteName: createSiteDto.siteName,
+        siteAddress: createSiteDto.siteAddress,
+        contactName: createSiteDto.contactName,
+        contactNumber: createSiteDto.contactNumber,
+        emailId: createSiteDto.emailId,
+        state: createSiteDto.state,
+        city: createSiteDto.city,
+        gstNo: createSiteDto.gstNo,
+        gstpdf: createSiteDto.gstpdf,
+        Customer: {
+          connect: { id: customerId },
+        },
+      },
+    });
+  }
 
   // Count total number of sites
-async countSites(): Promise<number> {
-  return this.prisma.site.count();
-}
-
-  
+  async countSites(): Promise<number> {
+    return this.prisma.site.count();
+  }
 
   // Get all Sites
   async findAll() {
@@ -86,13 +83,13 @@ async countSites(): Promise<number> {
     });
   }
 
-   // Get Sites by Customer ID
-   async findByCustomerId(customerId: number) {
+  // Get Sites by Customer ID
+  async findByCustomerId(customerId: number) {
     return this.prisma.site.findMany({
       where: { customerId: customerId },
     });
   }
-  
+
   // Get a specific Site by ID
   async findOne(id: number) {
     return this.prisma.site.findUnique({
@@ -103,8 +100,6 @@ async countSites(): Promise<number> {
       },
     });
   }
-
-  
 
   // Update Site details
   async update(id: number, updateSiteDto: UpdateSiteDto) {
