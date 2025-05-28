@@ -5,6 +5,7 @@ export enum TicketStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   RESOLVED = 'RESOLVED',
   CLOSED = 'CLOSED',
+  REOPENED = 'REOPENED',
 }
 
 export class CreateMessageDto {

@@ -404,14 +404,16 @@ model Ticket {
   ticketId  String
   title       String
   description String
-  categoryName String
-  subCategoryName String
-  serviceCategoryName String
-  customerId    Int
-  siteId        Int
-  contactPerson  String
-  mobileNo       String
-  proposedDate   DateTime
+  categoryName String?
+  subCategoryName String?
+  serviceCategoryName String?
+  customerId    Int?
+  siteId        Int?
+  manCustm    String?
+  manSite     String?
+  contactPerson  String?
+  mobileNo       String?
+  proposedDate   DateTime?
   priority      String
   status      TicketStatus @default(OPEN)
   createdAt   DateTime     @default(now())
@@ -421,8 +423,8 @@ model Ticket {
   createdBy   Users @relation("CreatedTickets", fields: [createdById], references: [id])
   createdById Int
 
-  customer   Customer   @relation(fields: [customerId], references: [id])
-  site       Site       @relation(fields: [siteId], references: [id])
+  customer   Customer?   @relation(fields: [customerId], references: [id])
+  site       Site?       @relation(fields: [siteId], references: [id])
 
   assignedTo   Users? @relation("AssignedTickets", fields: [assignedToId], references: [id])
   assignedToId Int?
@@ -441,12 +443,13 @@ model Message {
   ticketId Int
 
   sender   Users @relation("SentMessages", fields: [senderId], references: [id])
-  senderId Int
+  senderId Int  
 }
 
 enum TicketStatus {
   OPEN
   IN_PROGRESS
+  RESOLVED
   CLOSED
   REOPENED
 }

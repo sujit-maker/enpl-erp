@@ -1,24 +1,24 @@
-  "use client";
-  import React, { useEffect, useState } from "react";
-  import {
-    BiCategory,
-    BiStoreAlt,
-    BiTask,
-    BiSolidDashboard,
-  } from "react-icons/bi";
-  import {
-    ChevronDown,
-    ChevronUp,
-    Menu,
-    X,
-    LogOut,
-    LucideSettings,
-  } from "lucide-react";
-  import { FaRegAddressBook, FaTicketAlt, FaUser } from "react-icons/fa";
-  import { useAuth } from "../hooks/useAuth";
-  import { useRouter } from "next/navigation";
-  
-  export function AppSidebar() {
+"use client";
+import React, { useEffect, useState } from "react";
+import {
+  BiCategory,
+  BiStoreAlt,
+  BiTask,
+  BiSolidDashboard,
+} from "react-icons/bi";
+import {
+  ChevronDown,
+  ChevronUp,
+  Menu,
+  X,
+  LogOut,
+  LucideSettings,
+} from "lucide-react";
+import { FaRegAddressBook, FaTicketAlt, FaUser } from "react-icons/fa";
+import { useAuth } from "../hooks/useAuth";
+import { useRouter } from "next/navigation";
+
+export function AppSidebar() {
   const { userType } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -61,14 +61,24 @@
     router.push("/");
   };
 
-    return (
+  return (
     <div className="flex h-screen flex-col">
       {/* Header with Logout */}
       <div className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-400 p-4 shadow-lg flex justify-between items-center text-white">
         <button onClick={toggleSidebar} className="md:hidden">
-          {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isSidebarOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
         </button>
-        <h1 className="text-xl font-semibold">Inventory Management</h1>
+        <h1
+          className="text-xl font-semibold cursor-pointer"
+          onClick={() => router.push("/dashboard")}
+        >
+          Inventory Management
+        </h1>
+
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl shadow-md"
@@ -121,7 +131,7 @@
                 { label: "Service Contracts", url: "/servicecontract" },
               ],
             },
-            
+
             {
               label: "Inventory",
               icon: <BiCategory className="w-6 h-6" />,
@@ -167,7 +177,7 @@
               )}
             </li>
           ))}
-          
+
           {/* Task Management */}
           <li>
             <a
@@ -179,7 +189,7 @@
             </a>
           </li>
 
-           <li>
+          <li>
             <a
               href="/ticket"
               className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
@@ -188,7 +198,6 @@
               {isSidebarOpen && <span>Support Ticket</span>}
             </a>
           </li>
-            
         </ul>
       </div>
     </div>

@@ -23,35 +23,41 @@
     description: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     categoryName: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     subCategoryName: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     serviceCategoryName: string;
 
     @IsNumber()
-    @IsNotEmpty()
+    @IsOptional()
     customerId: number;
+  
 
     @IsNumber()
-    @IsNotEmpty()
+    @IsOptional()
     siteId: number;
 
+    @IsOptional()
+    manCustm: string;
+
+    @IsOptional()
+    manSite: string;
+
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     contactPerson: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     mobileNo: string;
 
-    @IsDateString()
-    @IsNotEmpty()
+    @IsOptional()
     proposedDate: Date;
 
     @IsString()

@@ -44,7 +44,6 @@ findOne(@Param('id', ParseIntPipe) id: number) {
     if (isNaN(ticketId)) {
       throw new BadRequestException('Invalid ticket ID');
     }
-    console.log('Controller received ID:', ticketId); // ✅ Add this for debugging
     return this.ticketService.update(ticketId, data);
   }
 
