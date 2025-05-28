@@ -34,7 +34,7 @@ interface Department {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/users");
+      const response = await axios.get("http://128.199.19.28:8000/users");
       setUsers(response.data.reverse());
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -43,7 +43,7 @@ interface Department {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/departments");
+      const response = await axios.get("http://128.199.19.28:8000/departments");
       setDepartments(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -52,7 +52,7 @@ interface Department {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`http://localhost:8000/users/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/users/${id}`);
       alert("User deleted successfully!");
       fetchUsers();
     } catch (error) {

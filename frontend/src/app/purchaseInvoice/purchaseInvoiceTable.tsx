@@ -137,8 +137,8 @@ const paginatedInventory = sortedInventory.slice(
   const fetchData = async () => {
     try {
       const [inventoryRes, paymentsRes] = await Promise.all([
-        axios.get("http://localhost:8000/inventory"),
-        axios.get("http://localhost:8000/vendor-payment"),
+        axios.get("http://128.199.19.28:8000/inventory"),
+        axios.get("http://128.199.19.28:8000/vendor-payment"),
       ]);
 
       const vendorPaymentsData = paymentsRes.data || [];
@@ -226,12 +226,12 @@ const paginatedInventory = sortedInventory.slice(
   };
 
   const fetchProducts = async () => {
-    const res = await axios.get("http://localhost:8000/products");
+    const res = await axios.get("http://128.199.19.28:8000/products");
     setProducts(res.data);
   };
 
   const fetchVendors = async () => {
-    const res = await axios.get("http://localhost:8000/vendors");
+    const res = await axios.get("http://128.199.19.28:8000/vendors");
     setVendors(res.data);
   };
 
@@ -320,12 +320,12 @@ const paginatedInventory = sortedInventory.slice(
 
       if (formData.id) {
         await axios.put(
-          `http://localhost:8000/inventory/${formData.id}`,
+          `http://128.199.19.28:8000/inventory/${formData.id}`,
           payload
         );
         alert("Inventory updated!");
       } else {
-        await axios.post("http://localhost:8000/inventory", payload);
+        await axios.post("http://128.199.19.28:8000/inventory", payload);
         alert("Inventory created!");
       }
 
@@ -340,7 +340,7 @@ const paginatedInventory = sortedInventory.slice(
 
   const handleDelete = async (id?: number) => {
     if (!id || !confirm("Delete this inventory item?")) return;
-    await axios.delete(`http://localhost:8000/inventory/${id}`);
+    await axios.delete(`http://128.199.19.28:8000/inventory/${id}`);
     fetchData();
   };
 

@@ -90,7 +90,7 @@ const initialFormState: Vendor = {
   const itemsPerPage = 5;
 
   const fetchVendors = async () => {
-    const response = await axios.get("http://localhost:8000/vendors");
+    const response = await axios.get("http://128.199.19.28:8000/vendors");
     setVendors(response.data.reverse());
   };
 
@@ -120,7 +120,7 @@ const initialFormState: Vendor = {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/category");
+      const response = await axios.get("http://128.199.19.28:8000/category");
       const names = response.data.map((c: any) => c.categoryName);
       setCategories(names);
     } catch (error) {
@@ -191,7 +191,7 @@ const initialFormState: Vendor = {
     if (!confirm) return;
 
     try {
-      await axios.delete(`http://localhost:8000/vendors/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/vendors/${id}`);
       alert("Vendor deleted successfully!");
       fetchVendors();
     } catch (err) {
@@ -243,7 +243,7 @@ const initialFormState: Vendor = {
 
     try {
       if (formData.id) {
-        await axios.put(`http://localhost:8000/vendors/${formData.id}`, {
+        await axios.put(`http://128.199.19.28:8000/vendors/${formData.id}`, {
           ...formData,
           contacts: validContacts,
           bankDetails: validBanks,
@@ -270,7 +270,7 @@ const initialFormState: Vendor = {
           payload.append("gstCertificate", gstPdfFile);
         }
 
-        await axios.post("http://localhost:8000/vendors", payload, {
+        await axios.post("http://128.199.19.28:8000/vendors", payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
@@ -349,7 +349,7 @@ const initialFormState: Vendor = {
                 <td className="p-2 border text-blue-900">
                   {vendor.gstpdf ? (
                     <a
-                      href={`http://localhost:8000/gst/${vendor.gstpdf}`}
+                      href={`http://128.199.19.28:8000/gst/${vendor.gstpdf}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

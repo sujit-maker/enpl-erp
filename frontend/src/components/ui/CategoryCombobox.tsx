@@ -42,7 +42,7 @@ export default function CategoryCombobox({
   React.useEffect(() => {
     async function fetchCategories() {
       try {
-        const res = await fetch("http://localhost:8000/category");
+        const res = await fetch("http://128.199.19.28:8000/category");
         const data = await res.json();
         setProducts(data);
       } catch (error) {
