@@ -72,8 +72,8 @@ export default function TicketPage() {
   } | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [allSites, setAllSites] = useState<Site[]>([]);  // For table
-  const [sites, setSites] = useState<Site[]>([]); // For form dropdown
+  const [allSites, setAllSites] = useState<Site[]>([]);  
+  const [sites, setSites] = useState<Site[]>([]); 
   const [isTicketModalOpen, setTicketModalOpen] = useState(false);
   const [isChatModalOpen, setChatModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -126,8 +126,6 @@ export default function TicketPage() {
   }, []);
 
 
-
-
   const headers = [
     { label: "Creation Date", key: "creationDate" },
     { label: "Support Ticket ID", key: "ticketId" },
@@ -146,6 +144,7 @@ export default function TicketPage() {
     return (
       ticket.createdAt.toLowerCase().includes(query) ||
       ticket.ticketId.toLowerCase().includes(query) ||
+      ticket.categoryName.toLowerCase().includes(query) ||
       ticket.title.toLowerCase().includes(query) ||
       ticket.description.toLowerCase().includes(query) ||
       ticket.categoryName.toLowerCase().includes(query) ||
