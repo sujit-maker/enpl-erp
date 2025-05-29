@@ -44,7 +44,7 @@ const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/departments");
+        const response = await axios.get("http://128.199.19.28:8000/departments");
         setDepartments(response.data);
       } catch (error) {
         console.error("Error fetching departments:", error);
@@ -59,7 +59,7 @@ const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
     const fetchUserData = async () => {
       if (userId) {
         try {
-          const response = await axios.get(`http://localhost:8000/users/${userId}`);
+          const response = await axios.get(`http://128.199.19.28:8000/users/${userId}`);
           const userData = response.data;
           setUser(userData);
           setUsername(userData.username);
@@ -100,7 +100,7 @@ const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
         departmentIds, // Send selected department IDs
       };
 
-      await axios.put(`http://localhost:8000/users/${userId}`, updatedUser);
+      await axios.put(`http://128.199.19.28:8000/users/${userId}`, updatedUser);
       fetchUsers();
       onHide();
     } catch (error) {

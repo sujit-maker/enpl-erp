@@ -20,16 +20,16 @@ export default function Dashboard() {
     const fetchCounts = async () => {
       try {
         const [vendorsRes, customersRes, sitesRes, productsRes,purchaseRateRes,soldPurchaseRateRes,restPurchaseRateRes,purchaseInvoiceRes,dueAmountRes,demoOutRes] = await Promise.all([
-          fetch('http://localhost:8000/vendors/count'),
-          fetch('http://localhost:8000/customers/count'),
-          fetch('http://localhost:8000/sites/count'),
-          fetch('http://localhost:8000/products/count'),
-          fetch('http://localhost:8000/inventory/purchaseRate/count'),
-          fetch('http://localhost:8000/inventory/sold/purchaseRate'),
-          fetch('http://localhost:8000/inventory/rest/sold'),
-          fetch('http://localhost:8000/inventory/count/purchaseInvoice'),
-          fetch('http://localhost:8000/inventory/count/dueAmount'),
-          fetch('http://localhost:8000/inventory/count/demo'),
+          fetch('http://128.199.19.28:8000/vendors/count'),
+          fetch('http://128.199.19.28:8000/customers/count'),
+          fetch('http://128.199.19.28:8000/sites/count'),
+          fetch('http://128.199.19.28:8000/products/count'),
+          fetch('http://128.199.19.28:8000/inventory/purchaseRate/count'),
+          fetch('http://128.199.19.28:8000/inventory/sold/purchaseRate'),
+          fetch('http://128.199.19.28:8000/inventory/rest/sold'),
+          fetch('http://128.199.19.28:8000/inventory/count/purchaseInvoice'),
+          fetch('http://128.199.19.28:8000/inventory/count/dueAmount'),
+          fetch('http://128.199.19.28:8000/inventory/count/demo'),
         ]);
 
         const [vendors, customers,sites, products,purchaseRate, soldPurchaseRate,restPurchaseRate,purchaseInvoice,dueAmount,demoOut] = await Promise.all([

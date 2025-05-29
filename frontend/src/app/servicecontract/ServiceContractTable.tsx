@@ -91,7 +91,7 @@ const ServiceContractTable: React.FC = () => {
   const fetchContracts = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/servicecontracts"
+        "http://128.199.19.28:8000/servicecontracts"
       );
       setContracts(response.data.reverse());
     } catch (error) {
@@ -101,7 +101,7 @@ const ServiceContractTable: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/customers");
+      const response = await axios.get("http://128.199.19.28:8000/customers");
       setCustomers(response.data);
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -110,7 +110,7 @@ const ServiceContractTable: React.FC = () => {
 
   const fetchSites = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/sites");
+      const response = await axios.get("http://128.199.19.28:8000/sites");
       setSites(response.data);
     } catch (error) {
       console.error("Error fetching sites:", error);
@@ -197,7 +197,7 @@ const ServiceContractTable: React.FC = () => {
 
   const handleCreate = async () => {
     try {
-      await axios.post("http://localhost:8000/servicecontracts", formData);
+      await axios.post("http://128.199.19.28:8000/servicecontracts", formData);
       alert("Contract created successfully!");
       setIsCreateModalOpen(false);
       fetchContracts();
@@ -226,7 +226,7 @@ const ServiceContractTable: React.FC = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:8000/servicecontracts/${selectedContract.id}`,
+        `http://128.199.19.28:8000/servicecontracts/${selectedContract.id}`,
         updatedFormData
       );
       alert("Contract updated successfully!");
@@ -241,7 +241,7 @@ const ServiceContractTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this contract?")) return;
     try {
-      await axios.delete(`http://localhost:8000/servicecontracts/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/servicecontracts/${id}`);
       alert("Deleted successfully!");
       fetchContracts();
     } catch (error) {

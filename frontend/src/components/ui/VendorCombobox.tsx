@@ -42,7 +42,7 @@ export function VendorCombobox({
   React.useEffect(() => {
     async function fetchVendors() {
       try {
-        const res = await fetch("http://localhost:8000/vendors");
+        const res = await fetch("http://128.199.19.28:8000/vendors");
         const data = await res.json();
         setVendors(data);
       } catch (error) {
