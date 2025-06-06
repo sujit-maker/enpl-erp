@@ -440,8 +440,8 @@ const Modal: React.FC<{
   onSave,
   onClose,
 }) => (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 mt-20 rounded-lg w-[500px] max-h-[90vh] overflow-auto">
+   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm z-50">
+<div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl animate-fadeIn">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
 
         <select
