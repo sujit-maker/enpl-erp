@@ -35,19 +35,19 @@ const CategoryTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/category");
+      const response = await axios.get("http://localhost:8000/category");
       setCategories(response.data.reverse());
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
   };
 
-  
+
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/category/${id}`);
+        await axios.delete(`http://localhost:8000/category/${id}`);
         alert("Category deleted successfully!");
         fetchCategories();
       } catch (error) {
@@ -68,7 +68,7 @@ const CategoryTable: React.FC = () => {
     }
 
     try {
-      await axios.post("http://128.199.19.28:8000/category", {
+      await axios.post("http://localhost:8000/category", {
         categoryName: formData.categoryName,
         categoryId: formData.categoryId,
         subCategories: formData.subCategories,
@@ -85,7 +85,7 @@ const CategoryTable: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-      await axios.put(`http://128.199.19.28:8000/category/${selectedCategory.id}`, {
+      await axios.put(`http://localhost:8000/category/${selectedCategory.id}`, {
         categoryName: formData.categoryName,
         categoryId: String(formData.categoryId), // ensure it's a string
         subCategories: formData.subCategories,
@@ -113,20 +113,20 @@ const CategoryTable: React.FC = () => {
           .includes(searchTerm.toLowerCase())
       )
   );
-   const sortedCategories = [...filteredCategories].sort((a, b) => {
-  if (!sortConfig) return 0;
-  const key = sortConfig.key;
-  const direction = sortConfig.direction === "asc" ? 1 : -1;
-  return a[key].toString().localeCompare(b[key].toString()) * direction;
-});
+  const sortedCategories = [...filteredCategories].sort((a, b) => {
+    if (!sortConfig) return 0;
+    const key = sortConfig.key;
+    const direction = sortConfig.direction === "asc" ? 1 : -1;
+    return a[key].toString().localeCompare(b[key].toString()) * direction;
+  });
 
-const requestSort = (key: keyof Category) => {
-  let direction: "asc" | "desc" = "asc";
-  if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
-    direction = "desc";
-  }
-  setSortConfig({ key, direction });
-};
+  const requestSort = (key: keyof Category) => {
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
 
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
@@ -135,7 +135,7 @@ const requestSort = (key: keyof Category) => {
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
- 
+
 
 
 
@@ -174,12 +174,12 @@ const requestSort = (key: keyof Category) => {
           <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
             <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-200">
-              <th className="border border-gray-300 p-2 cursor-pointer" onClick={() => requestSort("categoryId")}>
-  Category ID {sortConfig?.key === "categoryId" ? (sortConfig.direction === "asc" ? "↑" : "↓") : "↕"}
-</th>
-<th className="border border-gray-300 p-2 cursor-pointer" onClick={() => requestSort("categoryName")}>
-  Category Name {sortConfig?.key === "categoryName" ? (sortConfig.direction === "asc" ? "↑" : "↓") : "↕"}
-</th>
+                <th className="border border-gray-300 p-2 cursor-pointer" onClick={() => requestSort("categoryId")}>
+                  Category ID {sortConfig?.key === "categoryId" ? (sortConfig.direction === "asc" ? "↑" : "↓") : "↕"}
+                </th>
+                <th className="border border-gray-300 p-2 cursor-pointer" onClick={() => requestSort("categoryName")}>
+                  Category Name {sortConfig?.key === "categoryName" ? (sortConfig.direction === "asc" ? "↑" : "↓") : "↕"}
+                </th>
 
                 <th className="border border-gray-300 p-2">Actions</th>
               </tr>
@@ -250,11 +250,10 @@ const requestSort = (key: keyof Category) => {
               <button
                 key={index}
                 onClick={() => paginate(index + 1)}
-                className={`mx-1 px-4 py-2 rounded ${
-                  currentPage === index + 1
+                className={`mx-1 px-4 py-2 rounded ${currentPage === index + 1
                     ? "bg-blue-500 text-white"
                     : "bg-gray-300 text-gray-700"
-                } hover:bg-blue-400`}
+                  } hover:bg-blue-400`}
               >
                 {index + 1}
               </button>

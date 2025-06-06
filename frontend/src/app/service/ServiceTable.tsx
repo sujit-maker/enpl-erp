@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 interface Service {
   id: number;
@@ -16,6 +17,7 @@ interface Category {
   id: number;
   categoryName: string;
   subCategories: { id: number; subCategoryName: string }[];
+
 }
 
 const ServiceTable: React.FC = () => {
@@ -51,7 +53,7 @@ const ServiceTable: React.FC = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/service");
+      const response = await axios.get("http://localhost:8000/service");
       setServices(response.data.reverse());
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -60,7 +62,7 @@ const ServiceTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/servicecategory");
+      const response = await axios.get("http://localhost:8000/servicecategory");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -71,8 +73,8 @@ const ServiceTable: React.FC = () => {
     const category = categories.find((cat) => cat.id.toString() === categoryId);
     const validSubCategories = category
       ? category.subCategories.filter(
-          (sub) => sub.subCategoryName && sub.subCategoryName.trim() !== ""
-        )
+        (sub) => sub.subCategoryName && sub.subCategoryName.trim() !== ""
+      )
       : [];
     setSubCategories(validSubCategories);
   };
@@ -105,7 +107,7 @@ const ServiceTable: React.FC = () => {
         serviceCategoryId: +categoryId, // 🔁 FIXED
         serviceSubCategoryId: +subCategoryId, // 🔁 FIXED
       };
-      await axios.post("http://128.199.19.28:8000/service", newService);
+      await axios.post("http://localhost:8000/service", newService);
       alert("Service added successfully!");
       setIsCreateModalOpen(false);
       fetchServices();
@@ -123,7 +125,7 @@ const ServiceTable: React.FC = () => {
           serviceSubCategoryId: +subCategoryId,
         };
         await axios.put(
-          `http://128.199.19.28:8000/service/${selectedService.id}`,
+          `http://localhost:8000/service/${selectedService.id}`,
           updatedService
         );
         alert("Service updated successfully!");
@@ -138,7 +140,7 @@ const ServiceTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this service?")) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/service/${id}`);
+        await axios.delete(`http://localhost:8000/service/${id}`);
         alert("Service deleted successfully!");
         fetchServices();
       } catch (error) {
@@ -154,85 +156,83 @@ const ServiceTable: React.FC = () => {
     service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     service.serviceSkuId.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const sortedServices = [...filteredServices].sort((a, b) => {
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
-  
+
     const aVal = a[key as keyof typeof a];
     const bVal = b[key as keyof typeof b];
-  
+
     if (typeof aVal === "string" && typeof bVal === "string") {
       return direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
-  
+
     if (typeof aVal === "number" && typeof bVal === "number") {
       return direction === "asc" ? aVal - bVal : bVal - aVal;
     }
-  
+
     return 0;
   });
-  
+
   const currentServices = sortedServices.slice(indexOfFirstUser, indexOfLastUser);
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <div className="flex h-screen mt-20">
-      <div className="flex-1 p-6 overflow-auto lg:ml-72 ">
-        <div className="flex justify-between items-center mb-5">
-          <button
-            onClick={() => {
-              setFormData({
-                serviceSkuId: "",
-                serviceName: "",
-                serviceDescription: "",
-                SAC: "",
-                serviceCategoryId: 0,
-                serviceSubCategoryId: 0,
-              });
-              setIsCreateModalOpen(true);
-            }}
-             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
-          >
-            Add Service
-          </button>
-          <input
-            type="text"
-            placeholder="Search services..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border px-3 py-2 rounded w-64"
-          />
-        </div>
+    <div className="flex-1 p-6 overflow-auto lg:ml-72 ">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-5 mt-16">
+        <button
+          onClick={() => {
+            setFormData({
+              serviceSkuId: "",
+              serviceName: "",
+              serviceDescription: "",
+              SAC: "",
+              serviceCategoryId: 0,
+              serviceSubCategoryId: 0,
+            });
+            setIsCreateModalOpen(true);
+          }}
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+        >
+          Add Service
+        </button>
+        <input
+          type="text"
+          placeholder="Search services..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full border px-3 py-2 rounded w-64"
+        />
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-              <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+            <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-200">
-              <th
-  onClick={() =>
-    setSortConfig((prev) =>
-      prev?.key === "serviceSkuId"
-        ? { key: "serviceSkuId", direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { key: "serviceSkuId", direction: "asc" }
-    )
-  }
-  className="cursor-pointer hover:bg-gray-100 px-4 py-2"
->
-  SKU ID ⬍
-</th>
                 <th
-  onClick={() =>
-    setSortConfig((prev) =>
-      prev?.key === "serviceName"
-        ? { key: "serviceName", direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { key: "serviceName", direction: "asc" }
-    )
-  }
-  className="cursor-pointer hover:bg-gray-100 px-4 py-2"
->
-  Service Name ⬍
-</th>
+                  onClick={() =>
+                    setSortConfig((prev) =>
+                      prev?.key === "serviceSkuId"
+                        ? { key: "serviceSkuId", direction: prev.direction === "asc" ? "desc" : "asc" }
+                        : { key: "serviceSkuId", direction: "asc" }
+                    )
+                  }
+                  className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                >
+                  SKU ID ⬍
+                </th>
+                <th
+                  onClick={() =>
+                    setSortConfig((prev) =>
+                      prev?.key === "serviceName"
+                        ? { key: "serviceName", direction: prev.direction === "asc" ? "desc" : "asc" }
+                        : { key: "serviceName", direction: "asc" }
+                    )
+                  }
+                  className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                >
+                  Service Name ⬍
+                </th>
                 <th className="border border-gray-300 px-4 py-2">
                   Description
                 </th>
@@ -276,15 +276,15 @@ const ServiceTable: React.FC = () => {
                         setSubCategoryId(service.subCategoryId.toString());
                         setIsUpdateModalOpen(true);
                       }}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 mr-2"
+                      className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
                     >
-                      Edit
+                      <FaEdit />
                     </button>
                     <button
                       onClick={() => handleDelete(service.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
                     >
-                      Delete
+                      <FaTrashAlt />
                     </button>
                   </td>
                 </tr>
@@ -308,11 +308,10 @@ const ServiceTable: React.FC = () => {
               <button
                 key={index}
                 onClick={() => paginate(index + 1)}
-                className={`mx-1 px-4 py-2 rounded ${
-                  currentPage === index + 1
+                className={`mx-1 px-4 py-2 rounded ${currentPage === index + 1
                     ? "bg-blue-500 text-white"
                     : "bg-gray-300 text-gray-700"
-                } hover:bg-blue-400`}
+                  } hover:bg-blue-400`}
               >
                 {index + 1}
               </button>
@@ -391,83 +390,83 @@ const Modal: React.FC<{
   onSave,
   onClose,
 }) => (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white p-6 rounded-lg w-96">
-      <h2 className="text-xl font-bold mb-4">{title}</h2>
-      <input
-        name="serviceSkuId"
-        value={formData.serviceSkuId}
-        onChange={onInputChange}
-        placeholder="Service SKU ID"
-        className="w-full mb-3 p-2 border rounded"
-      />
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <input
+          name="serviceSkuId"
+          value={formData.serviceSkuId}
+          onChange={onInputChange}
+          placeholder="Service SKU ID"
+          className="w-full mb-3 p-2 border rounded"
+        />
 
-      <select
-        value={categoryId}
-        onChange={onCategoryChange}
-        className="w-full mb-3 p-2 border rounded"
-        required
-      >
-        <option value="">Select Category</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.categoryName}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={subCategoryId}
-        onChange={onSubCategoryChange}
-        className="w-full mb-3 p-2 border rounded"
-        required
-      >
-        <option value="">Select Subcategory</option>
-        {subCategories.map((subCategory) => (
-          <option key={subCategory.id} value={subCategory.id}>
-            {subCategory.subCategoryName}
-          </option>
-        ))}
-      </select>
-
-      <input
-        name="serviceName"
-        value={formData.serviceName}
-        onChange={onInputChange}
-        placeholder="Service Name"
-        className="w-full mb-3 p-2 border rounded"
-      />
-      <input
-        name="serviceDescription"
-        value={formData.serviceDescription}
-        onChange={onInputChange}
-        placeholder="Description"
-        className="w-full mb-3 p-2 border rounded"
-      />
-      <input
-        name="SAC"
-        value={formData.SAC}
-        onChange={onInputChange}
-        placeholder="SAC"
-        className="w-full mb-3 p-2 border rounded"
-      />
-
-      <div className="flex justify-end space-x-2">
-        <button
-          onClick={onSave}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+        <select
+          value={categoryId}
+          onChange={onCategoryChange}
+          className="w-full mb-3 p-2 border rounded"
+          required
         >
-          Save
-        </button>
-        <button
-          onClick={onClose}
-          className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+          <option value="">Select Category</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.categoryName}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={subCategoryId}
+          onChange={onSubCategoryChange}
+          className="w-full mb-3 p-2 border rounded"
+          required
         >
-          Cancel
-        </button>
+          <option value="">Select Subcategory</option>
+          {subCategories.map((subCategory) => (
+            <option key={subCategory.id} value={subCategory.id}>
+              {subCategory.subCategoryName}
+            </option>
+          ))}
+        </select>
+
+        <input
+          name="serviceName"
+          value={formData.serviceName}
+          onChange={onInputChange}
+          placeholder="Service Name"
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <input
+          name="serviceDescription"
+          value={formData.serviceDescription}
+          onChange={onInputChange}
+          placeholder="Description"
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <input
+          name="SAC"
+          value={formData.SAC}
+          onChange={onInputChange}
+          placeholder="SAC"
+          className="w-full mb-3 p-2 border rounded"
+        />
+
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={onSave}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Save
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 
 export default ServiceTable;

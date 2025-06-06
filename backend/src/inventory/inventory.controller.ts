@@ -12,6 +12,12 @@ export class InventoryController {
     return this.inventoryService.create(createInventoryDto);
   }
 
+  @Get('generate-serial/:productId')
+generateSerial(@Param('productId', ParseIntPipe) id: number) {
+  return this.inventoryService.generateNextSerialNumber(id);
+}
+
+
   @Get()
   findAll() {
     return this.inventoryService.findAll();

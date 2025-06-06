@@ -2,7 +2,7 @@ import React from 'react';
 import { AppSidebar } from '../components/app-sidebar';
 import VendorPaymentTable from './vendorPaymentTable';
 
-export default function Customers() {
+export default function VendorPayment() {
   return (
     <div className="flex h-screen">
     <AppSidebar />

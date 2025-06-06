@@ -2,7 +2,7 @@ import React from 'react';
 import { AppSidebar } from '../components/app-sidebar';
 import TaskTable from './TasktTable';
 
-export default function Vendors() {
+export default function Tasks() {
   return (
     <div className="flex h-screen">
     <AppSidebar />

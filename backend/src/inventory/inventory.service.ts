@@ -19,45 +19,57 @@ export class InventoryService {
         invoiceNetAmount: data.invoiceNetAmount,
         gstAmount: data.gstAmount,
         invoiceGrossAmount: data.invoiceGrossAmount,
-       dueAmount: Number(data.invoiceGrossAmount),
+        dueAmount: Number(data.invoiceGrossAmount),
         status: data.status,
       },
     });
 
     if (data.products && data.products.length > 0) {
       const productInventoryData = await Promise.all(
-        data.products.flatMap(async (product) => {
-          // Validate product existence
-          const existingProduct = await this.prisma.product.findUnique({
-            where: { id: product.productId },
-          });
+  data.products.flatMap(async (product) => {
+    // Validate product existence
+    const existingProduct = await this.prisma.product.findUnique({
+      where: { id: product.productId },
+    });
 
-          if (!existingProduct) {
-            throw new Error(
-              `Product with productId ${product.productId} not found`,
-            );
-          }
+    if (!existingProduct) {
+      throw new Error(`Product with productId ${product.productId} not found`);
+    }
 
-          // Split serial numbers
-          const serials = product.serialNumber
-            .split(',')
-            .map((sn) => sn.trim())
-            .filter((sn) => sn !== '');
+    const isSerialEmpty = !product.serialNumber || product.serialNumber.trim() === '';
+    const isMacEmpty = !product.macAddress || product.macAddress.trim() === '';
 
-          return serials.map((serialNumber) => ({
-            productId: existingProduct.id,
-            make: product.make,
-            model: product.model,
-            inventoryId: inventory.id,
-            serialNumber,
-            macAddress: product.macAddress,
-            warrantyPeriod: product.warrantyPeriod,
-            purchaseRate: product.purchaseRate,
-          }));
-        }),
-      );
+    let serials: string[];
 
-      // Flatten the nested arrays from Promise.all
+    if (isSerialEmpty && isMacEmpty) {
+      // Both serial and MAC empty: generate serial number
+      const generatedSerial = await this.generateNextSerialNumber(product.productId);
+      serials = [generatedSerial];
+    } else if (!isSerialEmpty) {
+      // Serial number(s) provided (comma separated)
+      serials = product.serialNumber
+        .split(',')
+        .map((sn) => sn.trim())
+        .filter((sn) => sn !== '');
+    } else {
+      // Serial empty but MAC provided: treat serials as empty string to create record with empty serial
+      serials = [''];
+    }
+
+    return serials.map((serialNumber) => ({
+      productId: existingProduct.id,
+      make: product.make,
+      model: product.model,
+      inventoryId: inventory.id,
+      serialNumber,
+      macAddress: product.macAddress,
+      warrantyPeriod: product.warrantyPeriod,
+      purchaseRate: product.purchaseRate,
+    }));
+  }),
+);
+
+
       const flatProductInventoryData = productInventoryData.flat();
 
       await this.prisma.productInventory.createMany({
@@ -68,24 +80,40 @@ export class InventoryService {
     return inventory;
   }
 
+  async generateNextSerialNumber(productId: number): Promise<string> {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { productId: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found for serial generation');
+    }
+
+    const count = await this.prisma.productInventory.count({
+      where: { productId },
+    });
+
+    return `${product.productId}-${(count + 1).toString().padStart(5, '0')}`;
+  }
+
   async applyVendorPayment(purchaseInvoiceNo: string, paymentAmount: number) {
-  // Get the inventory
-  const inventory = await this.prisma.inventory.findUnique({
-    where: { purchaseInvoice: purchaseInvoiceNo },
-  });
+    // Get the inventory
+    const inventory = await this.prisma.inventory.findUnique({
+      where: { purchaseInvoice: purchaseInvoiceNo },
+    });
 
-  if (!inventory) throw new Error('Invoice not found');
+    if (!inventory) throw new Error('Invoice not found');
 
-  const newDueAmount = (inventory.dueAmount || 0) - paymentAmount;
+    const newDueAmount = (inventory.dueAmount || 0) - paymentAmount;
 
-  await this.prisma.inventory.update({
-    where: { purchaseInvoice: purchaseInvoiceNo },
-    data: { dueAmount: newDueAmount < 0 ? 0 : newDueAmount }, // No negative dues
-  });
+    await this.prisma.inventory.update({
+      where: { purchaseInvoice: purchaseInvoiceNo },
+      data: { dueAmount: newDueAmount < 0 ? 0 : newDueAmount }, // No negative dues
+    });
 
-  // Optionally, record the payment somewhere else if needed
-}
-
+    // Optionally, record the payment somewhere else if needed
+  }
 
   // Ensure that the inventory update logic is correctly updating the fields
   async update(id: number, data: UpdateInventoryDto) {
@@ -213,36 +241,32 @@ export class InventoryService {
     return total;
   }
 
-
- async getTotalDemoOut(): Promise<number> {
-  const count = await this.prisma.productInventory.count({
-    where: {
-      inventory: {
-        status: 'Demo Out',
+  async getTotalDemoOut(): Promise<number> {
+    const count = await this.prisma.productInventory.count({
+      where: {
+        inventory: {
+          status: 'Demo Out',
+        },
       },
-    },
-  });
+    });
 
-  return count;
-}
+    return count;
+  }
 
+  async getTotalDueAmout(): Promise<number> {
+    const allDueAmount = await this.prisma.inventory.findMany({
+      select: {
+        dueAmount: true,
+      },
+    });
 
+    const total = allDueAmount.reduce((sum, item) => {
+      const due = item.dueAmount ?? 0;
+      return sum + due;
+    }, 0);
 
- async getTotalDueAmout(): Promise<number> {
-  const allDueAmount = await this.prisma.inventory.findMany({
-    select: {
-      dueAmount: true,
-    },
-  });
-
-  const total = allDueAmount.reduce((sum, item) => {
-    const due = item.dueAmount ?? 0; 
-    return sum + due;
-  }, 0);
-
-  return total;
-}
-
+    return total;
+  }
 
   async getTotalPurchaseRestSold(): Promise<number> {
     const allProductInventories = await this.prisma.productInventory.findMany({

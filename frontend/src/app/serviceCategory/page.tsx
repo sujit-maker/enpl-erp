@@ -2,7 +2,7 @@ import React from 'react';
 import { AppSidebar } from '../components/app-sidebar';
 import ServiceCategoryTable from './serviceCategoryTable';
 
-export default function Customers() {
+export default function ServiceCategory() {
   return (
     <div className="flex h-screen">
     <AppSidebar />

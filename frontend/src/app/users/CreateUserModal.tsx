@@ -29,7 +29,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://128.199.19.28:8000/departments");
+        const response = await axios.get("http://localhost:8000/departments");
         setDepartments(response.data);
       } catch (error) {
         console.error("Error fetching departments:", error);
@@ -64,7 +64,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
         ...loggedInUserField,
       };
 
-      await axios.post("http://128.199.19.28:8000/users", newUser);
+      await axios.post("http://localhost:8000/users", newUser);
     alert("user created successfully")
       fetchUsers();
       onHide();

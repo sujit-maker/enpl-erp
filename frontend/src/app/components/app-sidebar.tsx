@@ -29,7 +29,9 @@ export function AppSidebar() {
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const isNowMobile = window.innerWidth < 768;
+      setIsMobile(isNowMobile);
+      setIsSidebarOpen(!isNowMobile); 
     };
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
@@ -51,26 +53,19 @@ export function AppSidebar() {
   ];
 
   const toggleSidebar = () => {
-    if (isSidebarOpen) {
-      resetDropdowns();
-    }
+    if (isSidebarOpen) resetDropdowns();
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleLogout = () => {
-    router.push("/");
-  };
+  const handleLogout = () => router.push("/");
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Header with Logout */}
+
+    <div className="flex h-screen flex-col">                               
+      {/* Header */}
       <div className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-400 p-4 shadow-lg flex justify-between items-center text-white">
         <button onClick={toggleSidebar} className="md:hidden">
-          {isSidebarOpen ? (
-            <X className="w-6 h-6" />
-          ) : (
-            <Menu className="w-6 h-6" />
-          )}
+          {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
         <h1
           className="text-xl font-semibold cursor-pointer"
@@ -78,7 +73,6 @@ export function AppSidebar() {
         >
           Inventory Management
         </h1>
-
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl shadow-md"
@@ -89,11 +83,11 @@ export function AppSidebar() {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white transition-all duration-300 ${
-          isSidebarOpen ? "w-64" : "w-16"
-        } pt-20 overflow-y-auto shadow-xl`}
+        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white transition-all duration-300 pt-20 overflow-y-auto shadow-xl
+        ${isMobile ? (isSidebarOpen ? "w-64" : "w-0") : "w-64"}
+        ${isMobile ? "md:hidden" : "md:block"}`}
       >
-        <ul className="space-y-2 px-2">
+        <ul className={`space-y-2 ${isSidebarOpen ? "px-2" : "px-0"} transition-all duration-300`}>
           {menuItems.map((item, index) => (
             <li key={index}>
               <a
@@ -106,7 +100,6 @@ export function AppSidebar() {
             </li>
           ))}
 
-          {/* Dropdown Groups */}
           {[
             {
               label: "Address Book",
@@ -119,6 +112,7 @@ export function AppSidebar() {
                 { label: "Customer Sites", url: "/site" },
               ],
             },
+
             {
               label: "Services",
               icon: <LucideSettings className="w-6 h-6" />,
@@ -151,7 +145,7 @@ export function AppSidebar() {
             <li key={i}>
               <button
                 onClick={() => section.setOpen(!section.open)}
-                className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
+                className="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
               >
                 <div className="flex items-center gap-4">
                   {section.icon}
@@ -161,7 +155,7 @@ export function AppSidebar() {
                   <span>{section.open ? <ChevronUp /> : <ChevronDown />}</span>
                 )}
               </button>
-              {section.open && (
+              {section.open && isSidebarOpen && (
                 <ul className="ml-8 mt-1 space-y-1 text-indigo-200">
                   {section.items.map((link, idx) => (
                     <li key={idx}>
@@ -178,7 +172,7 @@ export function AppSidebar() {
             </li>
           ))}
 
-          {/* Task Management */}
+          {/* Other Items */}
           <li>
             <a
               href="/task"

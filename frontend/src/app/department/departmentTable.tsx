@@ -23,7 +23,7 @@ const DepartmentTable: React.FC = () => {
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://128.199.19.28:8000/departments");
+      const response = await axios.get("http://localhost:8000/departments");
       setDepartments(response.data.reverse());
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -39,7 +39,7 @@ const DepartmentTable: React.FC = () => {
     }
 
     try {
-      await axios.post("http://128.199.19.28:8000/departments", formData);
+      await axios.post("http://localhost:8000/departments", formData);
       alert("Department added successfully!");
       setIsModalOpen(false);
       fetchDepartments();
@@ -56,7 +56,7 @@ const DepartmentTable: React.FC = () => {
 
     try {
       await axios.put(
-        `http://128.199.19.28:8000/departments/${formData.id}`,
+        `http://localhost:8000/departments/${formData.id}`,
         formData
       );
       alert("Department updated successfully!");
@@ -71,7 +71,7 @@ const DepartmentTable: React.FC = () => {
     async (id: number) => {
       if (window.confirm("Are you sure you want to delete this department?")) {
         try {
-          await axios.delete(`http://128.199.19.28:8000/departments/${id}`);
+          await axios.delete(`http://localhost:8000/departments/${id}`);
           alert("Department deleted successfully!");
           fetchDepartments();
         } catch (error) {

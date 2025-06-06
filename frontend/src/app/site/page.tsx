@@ -2,10 +2,10 @@ import React from 'react';
 import { AppSidebar } from '../components/app-sidebar';
 import SiteTable from './SiteTable';
 
-export default function Users() {
+export default function Sites() {
   return (
     <div className="flex h-screen">
-    <AppSidebar />
+    <AppSidebar/>
     <main className="flex-1 p-4">
       <SiteTable />
     </main>

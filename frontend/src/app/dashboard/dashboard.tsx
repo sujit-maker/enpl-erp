@@ -20,16 +20,16 @@ export default function Dashboard() {
     const fetchCounts = async () => {
       try {
         const [vendorsRes, customersRes, sitesRes, productsRes,purchaseRateRes,soldPurchaseRateRes,restPurchaseRateRes,purchaseInvoiceRes,dueAmountRes,demoOutRes] = await Promise.all([
-          fetch('http://128.199.19.28:8000/vendors/count'),
-          fetch('http://128.199.19.28:8000/customers/count'),
-          fetch('http://128.199.19.28:8000/sites/count'),
-          fetch('http://128.199.19.28:8000/products/count'),
-          fetch('http://128.199.19.28:8000/inventory/purchaseRate/count'),
-          fetch('http://128.199.19.28:8000/inventory/sold/purchaseRate'),
-          fetch('http://128.199.19.28:8000/inventory/rest/sold'),
-          fetch('http://128.199.19.28:8000/inventory/count/purchaseInvoice'),
-          fetch('http://128.199.19.28:8000/inventory/count/dueAmount'),
-          fetch('http://128.199.19.28:8000/inventory/count/demo'),
+          fetch('http://localhost:8000/vendors/count'),
+          fetch('http://localhost:8000/customers/count'),
+          fetch('http://localhost:8000/sites/count'),
+          fetch('http://localhost:8000/products/count'),
+          fetch('http://localhost:8000/inventory/purchaseRate/count'),
+          fetch('http://localhost:8000/inventory/sold/purchaseRate'),
+          fetch('http://localhost:8000/inventory/rest/sold'),
+          fetch('http://localhost:8000/inventory/count/purchaseInvoice'),
+          fetch('http://localhost:8000/inventory/count/dueAmount'),
+          fetch('http://localhost:8000/inventory/count/demo'),
         ]);
 
         const [vendors, customers,sites, products,purchaseRate, soldPurchaseRate,restPurchaseRate,purchaseInvoice,dueAmount,demoOut] = await Promise.all([
@@ -117,26 +117,35 @@ export default function Dashboard() {
     },
   ];
 
-  return (
-    <div className="p-6 pl-64 min-h-screen bg-gray-50"> {/* pl-64 to offset sidebar */}
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Dashboard</h1>
+return (
+  <div className="p-4 sm:p-6 md:pl-64 min-h-screen bg-gray-50">
+    {/* Dashboard Title */}
+    <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
+      Dashboard
+    </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {cards.map((card, index) => (
-          <div
-            key={index}
-            className={`rounded-lg shadow-lg p-6 hover:scale-105 transition-transform duration-300 ${card.bg}`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-700">{card.label}</h2>
-                <p className="text-3xl font-bold text-gray-900">{card.count}</p>
-              </div>
-              {card.icon}
+    {/* Responsive Grid */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      {cards.map((card, index) => (
+        <div
+          key={index}
+          className={`rounded-lg shadow-md p-4 sm:p-6 hover:scale-[1.02] transition-transform duration-300 ${card.bg}`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base sm:text-lg font-medium text-gray-700">
+                {card.label}
+              </h2>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {card.count}
+              </p>
             </div>
+            <div className="ml-4 shrink-0">{card.icon}</div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
-  );
+  </div>
+);
+
 }

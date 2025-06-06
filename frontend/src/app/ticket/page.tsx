@@ -213,7 +213,7 @@ export default function TicketPage() {
       }
 
       const res = await axios.get(
-        `http://128.199.19.28:8000/tickets/user/${userId}`
+        `http://localhost:8000/tickets/user/${userId}`
       );
       setTickets(res.data.reverse()); // Reverse to show latest first
       console.log("Logged-in userId:", userId);
@@ -224,13 +224,13 @@ export default function TicketPage() {
   };
 
   const fetchCustomers = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/customers");
+    const res = await axios.get("http://localhost:8000/customers");
     setCustomers(res.data);
   };
 
   const fetchAllSites = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/sites");
+      const response = await axios.get("http://localhost:8000/sites");
       setAllSites(response.data); // ✅ Only for table
     } catch (error) {
       console.log("Error fetching all sites:", error);
@@ -239,15 +239,15 @@ export default function TicketPage() {
 
   const fetchSitesByCustomer = async (customerId: number) => {
     const res = await axios.get(
-      `http://128.199.19.28:8000/sites/customer/${customerId}`
+      `http://localhost:8000/sites/customer/${customerId}`
     );
     setSites(res.data);
   };
 
   const fetchTicketDetails = async (id: number) => {
-    const res = await axios.get(`http://128.199.19.28:8000/tickets/${id}`);
+    const res = await axios.get(`http://localhost:8000/tickets/${id}`);
     setSelectedTicket(res.data);
-    const msgRes = await axios.get(`http://128.199.19.28:8000/message/${id}`);
+    const msgRes = await axios.get(`http://localhost:8000/message/${id}`);
     setMessages(msgRes.data);
   };
 
@@ -260,7 +260,7 @@ export default function TicketPage() {
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    await axios.post("http://128.199.19.28:8000/tickets", {
+    await axios.post("http://localhost:8000/tickets", {
       ...form,
       createdBy: userId,
       assignedTo: 61,
@@ -293,7 +293,7 @@ export default function TicketPage() {
 
     try {
       // Send message
-      await axios.post("http://128.199.19.28:8000/message", {
+      await axios.post("http://localhost:8000/message", {
         content: newMessage,
         senderId: userId,
         ticketId: selectedTicket.id,
@@ -304,7 +304,7 @@ export default function TicketPage() {
         selectedTicket.assignedToId === userId &&
         selectedTicket.status === "OPEN"
       ) {
-        await axios.patch(`http://128.199.19.28:8000/tickets/${selectedTicket.id}`, {
+        await axios.patch(`http://localhost:8000/tickets/${selectedTicket.id}`, {
           status: "IN_PROGRESS",
         });
       }
@@ -320,7 +320,7 @@ export default function TicketPage() {
   useEffect(() => {
     if (!userId) return;
 
-    axios.get(`http://128.199.19.28:8000/users/${userId}`).then((res) => {
+    axios.get(`http://localhost:8000/users/${userId}`).then((res) => {
       setCurrentUser(res.data);
     });
   }, [userId]);
@@ -818,7 +818,7 @@ export default function TicketPage() {
                             {getNextStatus(ticket.status) && (
                               <div
                                 onClick={async () => {
-                                  await axios.patch(`http://128.199.19.28:8000/tickets/${ticket.id}`, {
+                                  await axios.patch(`http://localhost:8000/tickets/${ticket.id}`, {
                                     status: getNextStatus(ticket.status),
                                   });
                                   fetchTickets();

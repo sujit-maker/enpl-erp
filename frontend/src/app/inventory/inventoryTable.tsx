@@ -16,6 +16,7 @@ interface ProductInventory {
   macAddress: string;
   warrantyPeriod: string;
   purchaseRate: string;
+  noSerialMac?: boolean; // New field to indicate if serial/mac is not requiredx
 }
 
 interface Inventory {
@@ -126,7 +127,7 @@ const InventoryTable: React.FC = () => {
   }, [inventoryList, searchQuery]);
 
   const fetchInventory = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/inventory");
+    const res = await axios.get("http://localhost:8000/inventory");
     setInventoryList(res.data.reverse());
     const inventoryWithDuration = res.data.map((item: Inventory) => {
       const purchaseDate = new Date(item.purchaseDate);
@@ -143,12 +144,12 @@ const InventoryTable: React.FC = () => {
   };
 
   const fetchProducts = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/products");
+    const res = await axios.get("http://localhost:8000/products");
     setProducts(res.data);
   };
 
   const fetchVendors = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/vendors");
+    const res = await axios.get("http://localhost:8000/vendors");
     setVendors(res.data);
   };
 
@@ -257,40 +258,53 @@ const InventoryTable: React.FC = () => {
     });
   };
 
-  const handleSave = async () => {
-    try {
-      const payload = {
-        ...formData,
-        products: formData.products.map((product) => ({
-          productId: product.productId,
-          make: product.make,
-          model: product.model,
-          serialNumber: product.serialNumber,
-          macAddress: product.macAddress,
-          warrantyPeriod: product.warrantyPeriod,
-          purchaseRate: product.purchaseRate,
-        })),
-      };
+ const handleSave = async () => {
+  // Validation loop
+  for (let i = 0; i < formData.products.length; i++) {
+    const p = formData.products[i];
+    const hasSerial = p.serialNumber && p.serialNumber.trim() !== "";
+    const hasMac = p.macAddress && p.macAddress.trim() !== "";
+    const isChecked = p.noSerialMac === true;
 
-      if (formData.id) {
-        await axios.put(
-          `http://128.199.19.28:8000/inventory/${formData.id}`,
-          payload
-        );
-        alert("Inventory updated successfully!");
-      } else {
-        await axios.post("http://128.199.19.28:8000/inventory", payload);
-        alert("Inventory created successfully!");
-      }
-
-      setFormData(initialFormState);
-      setIsModalOpen(false);
-      fetchInventory();
-    } catch (err) {
-      console.error("Save error:", err);
-      alert("Something went wrong!");
+    if (!hasSerial && !hasMac && !isChecked) {
+      alert(
+        `You must have Serial Number, MAC Address, or check the box for auto-generate.`
+      );
+      return;
     }
-  };
+  }
+
+  try {
+    const payload = {
+      ...formData,
+      products: formData.products.map((product) => ({
+        productId: product.productId,
+        make: product.make,
+        model: product.model,
+        serialNumber: product.serialNumber,
+        macAddress: product.macAddress,
+        warrantyPeriod: product.warrantyPeriod,
+        purchaseRate: product.purchaseRate,
+        autoGenerateSerial: product.noSerialMac, // send to backend
+      })),
+    };
+
+    if (formData.id) {
+      await axios.put(`http://localhost:8000/inventory/${formData.id}`, payload);
+      alert("Inventory updated successfully!");
+    } else {
+      await axios.post("http://localhost:8000/inventory", payload);
+      alert("Inventory created successfully!");
+    }
+
+    setFormData(initialFormState);
+    setIsModalOpen(false);
+    fetchInventory();
+  } catch (err) {
+    console.error("Save error:", err);
+    alert("Something went wrong!");
+  }
+};
 
   const openModal = (data?: Inventory) => {
     if (data) {
@@ -428,9 +442,8 @@ const InventoryTable: React.FC = () => {
           <button
             key={i + 1}
             onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 border rounded ${
-              currentPage === i + 1 ? "bg-blue-600 text-white" : ""
-            }`}
+            className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+              }`}
           >
             {i + 1}
           </button>
@@ -555,11 +568,26 @@ const InventoryTable: React.FC = () => {
               {/* Product Inputs (Dynamic Rows) */}
               <div className="col-span-2">
                 <label className="block font-semibold mb-2">Products</label>
-                {formData.products.map((product, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4 border p-2 rounded relative"
-                  >
+{formData.products.map((product, index) => (
+  <div
+    key={index}
+    className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4 border p-2 rounded relative"
+  >
+    <div className="flex items-center col-span-2 md:col-span-3 mt-1">
+      <input
+        type="checkbox"
+        checked={product.noSerialMac || false}
+        onChange={(e) => {
+          const updated = [...formData.products];
+          updated[index].noSerialMac = e.target.checked;
+          setFormData({ ...formData, products: updated });
+        }}
+        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+      />
+      <label className="ml-2 text-sm font-medium text-gray-700">
+        Check if product does not have Serial or MAC
+      </label>
+    </div>
                     <ProductCombobox
                       selectedValue={product.productId}
                       onSelect={(value) =>

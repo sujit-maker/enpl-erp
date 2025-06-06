@@ -1,13 +1,13 @@
 import React from 'react';
-import { AppSidebar } from '../components/app-sidebar';
 import ServiceContractTable from './ServiceContractTable';
+import { AppSidebar } from '../components/app-sidebar';
 
-export default function Users() {
+export default function ServiceContracts() {
   return (
     <div className="flex h-screen">
-    <AppSidebar />
+      <AppSidebar/>
     <main className="flex-1 p-4">
-        <ServiceContractTable/>
+      <ServiceContractTable />
     </main>
   </div>
   );

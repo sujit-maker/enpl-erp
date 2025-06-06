@@ -2,7 +2,7 @@ import React from 'react';
 import { AppSidebar } from '../components/app-sidebar';
 import InventoryTable from './inventoryTable';
 
-export default function Customers() {
+export default function Inventory() {
   return (
     <div className="flex h-screen">
     <AppSidebar />

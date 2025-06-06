@@ -1,11 +1,47 @@
-import { IsString, IsNumber, IsDate, IsOptional, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsDateString,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+class ProductInput {
+  @IsNumber()
+  productId: number;
+
+  @IsString()
+  make: string;
+
+  @IsString()
+  model: string;
+
+  @IsString()
+  @IsOptional()
+  serialNumber: string;
+
+  @IsString()
+  @IsOptional()
+  macAddress: string;
+
+  @IsString()
+  warrantyPeriod: string;
+
+  @IsString()
+  purchaseRate: string;
+
+  @IsOptional()
+  autoGenerateSerial?: boolean;
+}
 
 export class CreateInventoryDto {
   @IsNumber()
   vendorId: number;
 
-  @IsDate()
-  purchaseDate: Date;
+  @IsDateString()
+  purchaseDate: string;
 
   @IsString()
   purchaseInvoice: string;
@@ -31,21 +67,15 @@ export class CreateInventoryDto {
   status?: string;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   dueAmount?: number;
-  
+
   @IsOptional()
   @IsString()
   duration?: string;
 
   @IsArray()
-  products: {
-    productId: number;
-    make: string;
-    model: string;
-    serialNumber: string;
-    macAddress: string;
-    warrantyPeriod: string;
-    purchaseRate: string;
-  }[];
+  @ValidateNested({ each: true })
+  @Type(() => ProductInput)
+  products: ProductInput[];
 }

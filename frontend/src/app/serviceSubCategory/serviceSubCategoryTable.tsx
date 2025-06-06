@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 interface Category {
   id: number;
@@ -35,7 +36,7 @@ const ServiceSubCategoryTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/servicecategory");
+      const response = await axios.get("http://localhost:8000/servicecategory");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -44,7 +45,7 @@ const ServiceSubCategoryTable: React.FC = () => {
 
   const fetchSubCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/servicesubcategory");
+      const response = await axios.get("http://localhost:8000/servicesubcategory");
       const filtered = response.data.filter(
         (sub: SubCategory) => sub.category?.categoryName && sub.subCategoryName
       );
@@ -57,7 +58,7 @@ const ServiceSubCategoryTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this subcategory?")) {
       try {
-        await axios.delete(`http://128.199.19.28:8000/servicesubcategory/${id}`);
+        await axios.delete(`http://localhost:8000/servicesubcategory/${id}`);
         alert("Subcategory deleted successfully!");
         fetchSubCategories();
       } catch (error) {
@@ -75,14 +76,14 @@ const ServiceSubCategoryTable: React.FC = () => {
 
     try {
       if (selectedSubCategory) {
-        await axios.put(`http://128.199.19.28:8000/servicesubcategory/${selectedSubCategory.id}`, {
+        await axios.put(`http://localhost:8000/servicesubcategory/${selectedSubCategory.id}`, {
           serviceSubCatId,
           categoryId,
           subCategoryName,
         });
         alert("Subcategory updated successfully!");
       } else {
-        await axios.post("http://128.199.19.28:8000/servicesubcategory", {
+        await axios.post("http://localhost:8000/servicesubcategory", {
           serviceSubCatId,
           serviceCategoryId: categoryId,
           subCategoryName,
@@ -150,27 +151,25 @@ const ServiceSubCategoryTable: React.FC = () => {
   const paginate = (page: number) => setCurrentPage(page);
 
   return (
-    <div className="flex h-screen mt-3">
-      <div className="flex-1 p-6 overflow-auto lg:ml-72">
-        <div className="flex justify-between items-center mb-5 mt-16">
-          <button
-            onClick={openCreateModal}
-             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
-          >
-            Add Subcategory
-          </button>
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border px-3 py-2 rounded w-64 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-          />
-        </div>
+    <div className="flex-1 p-6 overflow-auto lg:ml-72 ">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-5 mt-16">
+        <button
+          onClick={openCreateModal}
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+        >
+          Add Subcategory
+        </button>
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className=" w-full border px-3 py-2 rounded w-64 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+        />
 
         <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-             <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+          <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+            <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
               <tr className="bg-gray-100 text-gray-700">
                 <th
                   onClick={() =>
@@ -221,15 +220,15 @@ const ServiceSubCategoryTable: React.FC = () => {
                     <td className="border px-4 py-2 space-x-2">
                       <button
                         onClick={() => openUpdateModal(sub)}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                        className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
                       >
-                        Edit
+                        <FaEdit />
                       </button>
                       <button
                         onClick={() => handleDelete(sub.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
                       >
-                        Delete
+                        <FaTrashAlt />
                       </button>
                     </td>
                   </tr>
@@ -258,9 +257,8 @@ const ServiceSubCategoryTable: React.FC = () => {
             <button
               key={index}
               onClick={() => paginate(index + 1)}
-              className={`mx-1 px-4 py-2 rounded ${
-                currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-700"
-              } hover:bg-blue-400`}
+              className={`mx-1 px-4 py-2 rounded ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-700"
+                } hover:bg-blue-400`}
             >
               {index + 1}
             </button>

@@ -160,22 +160,22 @@ const MaterialDeliveryForm: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get("http://128.199.19.28:8000/customers")
+      .get("http://localhost:8000/customers")
       .then((res) => setCustomers(res.data));
     axios
-      .get("http://128.199.19.28:8000/vendors")
+      .get("http://localhost:8000/vendors")
       .then((res) => setVendors(res.data));
     axios
-      .get("http://128.199.19.28:8000/products")
+      .get("http://localhost:8000/products")
       .then((res) => setProducts(res.data));
     axios
-      .get("http://128.199.19.28:8000/inventory")
+      .get("http://localhost:8000/inventory")
       .then((res) => setInventory(res.data));
     fetchDeliveries(); // Fetch deliveries on component mount
   }, []);
 
   useEffect(() => {
-    axios.get("http://128.199.19.28:8000/inventory").then((res) => {
+    axios.get("http://localhost:8000/inventory").then((res) => {
       console.log("Raw inventory response:", res.data); // ✅ log raw response
 
       const flattened = res.data.flatMap((inv: any) =>
@@ -195,7 +195,7 @@ const MaterialDeliveryForm: React.FC = () => {
   }, []);
 
   const fetchDeliveries = async () => {
-    const res = await axios.get("http://128.199.19.28:8000/material-delivery");
+    const res = await axios.get("http://localhost:8000/material-delivery");
     setDeliveryList(res.data.reverse());
   };
 
@@ -369,12 +369,12 @@ const MaterialDeliveryForm: React.FC = () => {
     try {
       if (isEdit) {
         await axios.put(
-          `http://128.199.19.28:8000/material-delivery/${formData.id}`,
+          `http://localhost:8000/material-delivery/${formData.id}`,
           payload
         );
         alert("Delivery updated sucessfully!");
       } else {
-        await axios.post("http://128.199.19.28:8000/material-delivery", payload);
+        await axios.post("http://localhost:8000/material-delivery", payload);
         alert("Delivery created successfully!");
       }
 
@@ -437,7 +437,7 @@ const MaterialDeliveryForm: React.FC = () => {
   const handleDelete = (id: any): void => {
     if (confirm("Are you sure you want to delete this delivery?")) {
       axios
-        .delete(`http://128.199.19.28:8000/material-delivery/${id}`)
+        .delete(`http://localhost:8000/material-delivery/${id}`)
         .then(() => {
           alert("Delivery deleted!");
           fetchDeliveries();

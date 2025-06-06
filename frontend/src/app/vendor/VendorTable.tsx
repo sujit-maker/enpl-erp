@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Plus } from "lucide-react";
-import { Trash2, PencilLine } from "lucide-react";
 import { FaEdit, FaSearch, FaTrashAlt } from "react-icons/fa";
 
 interface VendorContact {
@@ -79,7 +78,7 @@ const initialFormState: Vendor = {
   bankDetails: [emptyBank],
 };
 
-  const VendorTable: React.FC = () => {
+const VendorTable: React.FC = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
@@ -90,7 +89,7 @@ const initialFormState: Vendor = {
   const itemsPerPage = 5;
 
   const fetchVendors = async () => {
-    const response = await axios.get("http://128.199.19.28:8000/vendors");
+    const response = await axios.get("http://localhost:8000/vendors");
     setVendors(response.data.reverse());
   };
 
@@ -120,7 +119,7 @@ const initialFormState: Vendor = {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://128.199.19.28:8000/category");
+      const response = await axios.get("http://localhost:8000/category");
       const names = response.data.map((c: any) => c.categoryName);
       setCategories(names);
     } catch (error) {
@@ -191,7 +190,7 @@ const initialFormState: Vendor = {
     if (!confirm) return;
 
     try {
-      await axios.delete(`http://128.199.19.28:8000/vendors/${id}`);
+      await axios.delete(`http://localhost:8000/vendors/${id}`);
       alert("Vendor deleted successfully!");
       fetchVendors();
     } catch (err) {
@@ -239,11 +238,11 @@ const initialFormState: Vendor = {
     const validBanks = formData.bankDetails.filter(
       (b) => b.accountNumber.trim() || b.ifscCode.trim() || b.bankName.trim()
     );
-    
+
 
     try {
       if (formData.id) {
-        await axios.put(`http://128.199.19.28:8000/vendors/${formData.id}`, {
+        await axios.put(`http://localhost:8000/vendors/${formData.id}`, {
           ...formData,
           contacts: validContacts,
           bankDetails: validBanks,
@@ -270,7 +269,7 @@ const initialFormState: Vendor = {
           payload.append("gstCertificate", gstPdfFile);
         }
 
-        await axios.post("http://128.199.19.28:8000/vendors", payload, {
+        await axios.post("http://localhost:8000/vendors", payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
@@ -291,33 +290,35 @@ const initialFormState: Vendor = {
 
   return (
     <div className="flex-1 p-6 overflow-auto lg:ml-72 ">
-      <div className="flex justify-between items-center mb-5 mt-16">
-        <button
-          onClick={() => {
-            setFormData(initialFormState); // clear form
-            setIsCreateModalOpen(true);
-          }}
-  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
-        >
-          Add Company
-        </button>
-        <div className="relative w-full md:w-64">
-  <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-    <FaSearch />
-  </span>
-  <input
-    type="text"
-    placeholder="Search..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
-  />
+    <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-5 mt-16">
+  <button
+    onClick={() => {
+      setFormData(initialFormState); // clear form
+      setIsCreateModalOpen(true);
+    }}
+    className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300 w-full md:w-auto"
+  >
+    Add Company
+  </button>
+  
+  <div className="relative w-full md:w-64">
+    <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+      <FaSearch />
+    </span>
+    <input
+      type="text"
+      placeholder="Search..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-300"
+    />
+  </div>
 </div>
-      </div>
+
 
       <div className="overflow-x-auto" style={{ maxWidth: "100vw" }}>
-         <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
-  <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
+        <table className="w-full text-sm text-gray-700 bg-white rounded-xl shadow-md overflow-hidden">
+          <thead className="bg-gradient-to-r from-blue-100 to-purple-100">
             <tr>
               <th className="p-2 border">Vendor ID</th>
               <th className="p-2 border">Vendor Type</th>
@@ -349,7 +350,7 @@ const initialFormState: Vendor = {
                 <td className="p-2 border text-blue-900">
                   {vendor.gstpdf ? (
                     <a
-                      href={`http://128.199.19.28:8000/gst/${vendor.gstpdf}`}
+                      href={`http://localhost:8000/gst/${vendor.gstpdf}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -361,22 +362,22 @@ const initialFormState: Vendor = {
                 </td>
                 <td className="p-2 border">{vendor.creditTerms}</td>
 
-               <td className="px-4 py-2 text-center space-x-2">
-  <button
-    onClick={() => handleEdit(vendor)}
-    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-    title="Edit"
-  >
-    <FaEdit />
-  </button>
-  <button
-    onClick={() => handleDelete(vendor.id)}
-    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
-    title="Delete"
-  >
-    <FaTrashAlt />
-  </button>
-</td>
+                <td className="px-4 py-2 text-center space-x-2">
+                  <button
+                    onClick={() => handleEdit(vendor)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                    title="Edit"
+                  >
+                    <FaEdit />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(vendor.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow transition-transform transform hover:scale-110"
+                    title="Delete"
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </td>
 
               </tr>
             ))}
@@ -397,9 +398,8 @@ const initialFormState: Vendor = {
           <button
             key={page}
             onClick={() => setCurrentPage(page)}
-            className={`px-3 py-1 border rounded ${
-              page === currentPage ? "bg-blue-500 text-white" : "bg-gray-100"
-            } hover:bg-gray-200`}
+            className={`px-3 py-1 border rounded ${page === currentPage ? "bg-blue-500 text-white" : "bg-gray-100"
+              } hover:bg-gray-200`}
           >
             {page}
           </button>
@@ -417,15 +417,14 @@ const initialFormState: Vendor = {
       </div>
 
       {isCreateModalOpen && (
-        <div className="fixed inset-0 ml-48 mt-20  bg-gray bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden">
+         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fadeIn">
             <div className="overflow-auto max-h-[90vh]">
-              <div className="min-w-[800px] p-6">
-                <h3 className="text-lg font-bold mb-4 text-center">
+                <h3 className="text-xl font-semibold mb-4 text-indigo-600">
                   {formData.id ? "Edit Vendor" : "Create Vendor"}
                 </h3>
 
-                  
+
 
                 <div className="mt-4">
                   <label className="font-semibold block mb-2">
@@ -612,7 +611,6 @@ const initialFormState: Vendor = {
               </div>
             </div>
           </div>
-        </div>
       )}
     </div>
   );
