@@ -483,7 +483,7 @@ const VendorPaymentTable: React.FC = () => {
                 />
               </div>
 
-              {vendorInvoices.length > 1 && (
+              {vendorInvoices.length > 0 && (
                 <div>
                   <label className="font-semibold mb-1 block">
                     Select Invoice

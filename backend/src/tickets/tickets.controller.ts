@@ -38,6 +38,39 @@ findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ticketService.findOne(+id);
   }
 
+    @Get('count/all')
+  async countAllTickets(): Promise<number> {
+    return this.ticketService.countTickets();
+  }
+
+  @Get('count/open')
+async countOpenTickets(): Promise<number> {
+  return this.ticketService.countTicketsByStatus('OPEN');
+}
+
+  @Get('count/closed')
+async countClosedTickets(): Promise<number> {
+  return this.ticketService.countTicketsByStatus('CLOSED');
+}
+
+  @Get('count/inprogress')
+async countInprogressTickets(): Promise<number> {
+  return this.ticketService.countTicketsByStatus('IN_PROGRESS');
+}
+
+  @Get('count/resolved')
+async countResolvedTickets(): Promise<number> {
+  return this.ticketService.countTicketsByStatus('RESOLVED');
+}
+
+  @Get('count/reopened')
+async countReopenedTickets(): Promise<number> {
+  return this.ticketService.countTicketsByStatus('REOPENED');
+}
+
+
+
+
   @Patch(':id')
   updateTicket(@Param('id') id: string, @Body() data: UpdateTicketDto) {
     const ticketId = Number(id);

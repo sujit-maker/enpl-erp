@@ -89,6 +89,17 @@ export class TicketsService {
     return this.prisma.ticket.findMany({ include: { messages: true } });
   }
 
+ // ticket.service.ts
+async countTickets(): Promise<number> {
+  return this.prisma.ticket.count();
+}
+
+  async countTicketsByStatus(status: string): Promise<number> {
+    return this.prisma.ticket.count({
+      where: { status: status as any },     });
+  }
+
+  
   // Show all tickets (for SUPERADMIN)
   findAllUnfiltered() {
     return this.prisma.ticket.findMany({
