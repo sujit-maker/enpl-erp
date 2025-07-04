@@ -220,7 +220,7 @@ model BankDetail {
   ifscCode      String
   branchName    String
   vendorId      Int
-  vendor        Vendor @relation("VendorBankDetails", fields: [vendorId], references: [id], onDelete: Cascade)
+  vendor          Vendor @relation("VendorBankDetails", fields: [vendorId], references: [id], onDelete: Cascade)
 }
 
 model VendorContact {

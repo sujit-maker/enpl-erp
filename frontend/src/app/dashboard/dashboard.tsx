@@ -30,22 +30,22 @@ export default function Dashboard() {
     const fetchCounts = async () => {
       try {
         const responses = await Promise.all([
-          fetch('http://localhost:8000/vendors/count'),
-          fetch('http://localhost:8000/customers/count'),
-          fetch('http://localhost:8000/sites/count'),
-          fetch('http://localhost:8000/products/count'),
-          fetch('http://localhost:8000/inventory/purchaseRate/count'),
-          fetch('http://localhost:8000/inventory/sold/purchaseRate'),
-          fetch('http://localhost:8000/inventory/rest/sold'),
-          fetch('http://localhost:8000/inventory/count/purchaseInvoice'),
-          fetch('http://localhost:8000/inventory/count/dueAmount'),
-          fetch('http://localhost:8000/inventory/count/demo'),
-          fetch('http://localhost:8000/tickets/count/open'),
-          fetch('http://localhost:8000/tickets/count/closed'),
-          fetch('http://localhost:8000/tickets/count/inprogress'),
-          fetch('http://localhost:8000/tickets/count/resolved'),
-          fetch('http://localhost:8000/tickets/count/reopened'),
-          fetch('http://localhost:8000/tickets/count/all'),
+          fetch('http://192.168.29.225:8000/vendors/count'),
+          fetch('http://192.168.29.225:8000/customers/count'),
+          fetch('http://192.168.29.225:8000/sites/count'),
+          fetch('http://192.168.29.225:8000/products/count'),
+          fetch('http://192.168.29.225:8000/inventory/purchaseRate/count'),
+          fetch('http://192.168.29.225:8000/inventory/sold/purchaseRate'),
+          fetch('http://192.168.29.225:8000/inventory/rest/sold'),
+          fetch('http://192.168.29.225:8000/inventory/count/purchaseInvoice'),
+          fetch('http://192.168.29.225:8000/inventory/count/dueAmount'),
+          fetch('http://192.168.29.225:8000/inventory/count/demo'),
+          fetch('http://192.168.29.225:8000/tickets/count/open'),
+          fetch('http://192.168.29.225:8000/tickets/count/closed'),
+          fetch('http://192.168.29.225:8000/tickets/count/inprogress'),
+          fetch('http://192.168.29.225:8000/tickets/count/resolved'),
+          fetch('http://192.168.29.225:8000/tickets/count/reopened'),
+          fetch('http://192.168.29.225:8000/tickets/count/all'),
         ]);
 
         const data = await Promise.all(responses.map(res => res.json()));

@@ -64,7 +64,7 @@ export function AppSidebar() {
     <div className="flex h-screen flex-col">                               
       {/* Header */}
       <div className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-400 p-4 shadow-lg flex justify-between items-center text-white">
-        <button onClick={toggleSidebar} className="md:hidden">
+        <button onClick={toggleSidebar} className="md:hidden cursor-pointer">
           {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
         <h1
@@ -75,7 +75,7 @@ export function AppSidebar() {
         </h1>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl shadow-md"
+          className="flex items-center gap-2 cursor-pointer bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl shadow-md"
         >
           <LogOut className="w-5 h-5" /> Logout
         </button>
@@ -92,7 +92,7 @@ export function AppSidebar() {
             <li key={index}>
               <a
                 href={item.url}
-                className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200 group"
+                className="flex items-center cursor-pointer gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200 group"
               >
                 <item.icon className="w-6 h-6 group-hover:text-white text-indigo-300" />
                 {isSidebarOpen && <span>{item.title}</span>}
@@ -145,7 +145,7 @@ export function AppSidebar() {
             <li key={i}>
               <button
                 onClick={() => section.setOpen(!section.open)}
-                className="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
+                className="flex items-center cursor-pointer justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
               >
                 <div className="flex items-center gap-4">
                   {section.icon}
@@ -173,15 +173,15 @@ export function AppSidebar() {
           ))}
 
           {/* Other Items */}
-          <li>
+          {/* <li>
             <a
               href="/task"
-              className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
+              className="flex items-center cursor-pointer gap-4 px-4 py-3 rounded-lg hover:bg-indigo-600 transition duration-200"
             >
               <BiTask className="w-7 h-7 text-indigo-300 group-hover:text-white" />
               {isSidebarOpen && <span>Task Management</span>}
             </a>
-          </li>
+          </li> */}
 
           <li>
             <a

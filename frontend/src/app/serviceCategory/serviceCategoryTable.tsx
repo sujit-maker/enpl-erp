@@ -35,7 +35,7 @@ const ServiceCategoryTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/servicecategory");
+      const response = await axios.get("http://192.168.29.225:8000/servicecategory");
       setCategories(response.data.reverse());
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -45,7 +45,7 @@ const ServiceCategoryTable: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
-        await axios.delete(`http://localhost:8000/servicecategory/${id}`);
+        await axios.delete(`http://192.168.29.225:8000/servicecategory/${id}`);
         alert("Category deleted successfully!");
         fetchCategories();
       } catch (error) {
@@ -63,7 +63,7 @@ const ServiceCategoryTable: React.FC = () => {
       return;
     }
     try {
-      await axios.post("http://localhost:8000/servicecategory", {
+      await axios.post("http://192.168.29.225:8000/servicecategory", {
         serviceCatId: formData.serviceCatId,
         categoryName: formData.categoryName,
         subCategories: formData.subCategories,
@@ -80,7 +80,7 @@ const ServiceCategoryTable: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-      await axios.put(`http://localhost:8000/servicecategory/${selectedCategory.id}`, {
+      await axios.put(`http://192.168.29.225:8000/servicecategory/${selectedCategory.id}`, {
         serviceCatId: formData.serviceCatId,
         categoryName: formData.categoryName,
         subCategories: formData.subCategories,

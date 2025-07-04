@@ -99,7 +99,6 @@ async countTickets(): Promise<number> {
       where: { status: status as any },     });
   }
 
-  
   // Show all tickets (for SUPERADMIN)
   findAllUnfiltered() {
     return this.prisma.ticket.findMany({

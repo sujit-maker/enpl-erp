@@ -83,9 +83,69 @@ export class VendorController {
 
   // Update a vendor
   @Put(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateVendorDto) {
-    return this.vendorService.update(id, dto);
+@UseInterceptors(
+  FileInterceptor('gstCertificate', {
+    storage: diskStorage({
+      destination: './uploads/gst-certificates',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype !== 'application/pdf') {
+        return cb(new Error('Only PDF files are allowed'), false);
+      }
+      cb(null, true);
+    },
+  }),
+)
+async update(
+  @Param('id', ParseIntPipe) id: number,
+  @Body() body: any,
+  @UploadedFile() file: Express.Multer.File,
+) {
+  try {
+    const vendor = await this.vendorService.findOne(id);
+    if (!vendor) {
+      throw new BadRequestException('Vendor not found');
+    }
+
+    const {
+      contacts,
+      bankDetails,
+      products,
+      ...vendorData
+    } = body;
+
+    const parsedContacts = JSON.parse(contacts || '[]');
+    const parsedBankDetails = JSON.parse(bankDetails || '[]');
+    const parsedProducts = JSON.parse(products || '[]');
+
+    // Handle new file upload
+    if (file) {
+      // Delete old file if it exists
+      if (vendor.gstpdf) {
+        const oldFilePath = `./uploads/gst-certificates/${vendor.gstpdf}`;
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+      vendorData.gstpdf = file.filename;
+    }
+
+    return this.vendorService.update(id, {
+      ...vendorData,
+      contacts: parsedContacts,
+      bankDetails: parsedBankDetails,
+      products: parsedProducts,
+    });
+  } catch (error) {
+    console.error('Update error:', error);
+    throw new BadRequestException('Invalid update data');
   }
+}
 
   // Delete a vendor
   @Delete(':id')

@@ -89,7 +89,7 @@ const VendorTable: React.FC = () => {
   const itemsPerPage = 5;
 
   const fetchVendors = async () => {
-    const response = await axios.get("http://localhost:8000/vendors");
+    const response = await axios.get("http://192.168.29.225:8000/vendors");
     setVendors(response.data.reverse());
   };
 
@@ -119,7 +119,7 @@ const VendorTable: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/category");
+      const response = await axios.get("http://192.168.29.225:8000/category");
       const names = response.data.map((c: any) => c.categoryName);
       setCategories(names);
     } catch (error) {
@@ -190,7 +190,7 @@ const VendorTable: React.FC = () => {
     if (!confirm) return;
 
     try {
-      await axios.delete(`http://localhost:8000/vendors/${id}`);
+      await axios.delete(`http://192.168.29.225:8000/vendors/${id}`);
       alert("Vendor deleted successfully!");
       fetchVendors();
     } catch (err) {
@@ -199,94 +199,96 @@ const VendorTable: React.FC = () => {
     }
   };
 
-  const handleCreate = async () => {
-    // List of required top-level fields
-    const requiredFields = [
-      "vendorName",
-      "registerAddress",
-      "gstNo",
-      "state",
-      "city",
-      "emailId",
-      "creditTerms",
-      "creditLimit",
-    ];
+ const handleCreate = async () => {
+  // ✅ Validate required fields
+  const requiredFields = [
+    "vendorName",
+    "registerAddress",
+    "gstNo",
+    "state",
+    "city",
+    "emailId",
+    "creditTerms",
+    "creditLimit",
+  ];
 
-    // Check if any required field is empty
-    const missingFields = requiredFields.filter(
-      (field) => !formData[field as keyof Vendor]?.toString().trim()
-    );
+  const missingFields = requiredFields.filter(
+    (field) => !formData[field as keyof Vendor]?.toString().trim()
+  );
 
-    if (missingFields.length > 0) {
-      alert(
-        `Please fill out the following fields: ${missingFields.join(", ")}`
-      );
-      return;
+  if (missingFields.length > 0) {
+    alert(`Please fill out the following fields: ${missingFields.join(", ")}`);
+    return;
+  }
+
+  // ✅ Validate contacts
+  const validContacts = formData.contacts.filter(
+    (c) =>
+      c.firstName.trim() || c.lastName.trim() || c.contactPhoneNumber.trim()
+  );
+  if (validContacts.length === 0) {
+    alert("Please add at least one valid contact.");
+    return;
+  }
+
+  // ✅ Validate bank details
+  const validBanks = formData.bankDetails.filter(
+    (b) => b.accountNumber.trim() || b.ifscCode.trim() || b.bankName.trim()
+  );
+
+  try {
+    // ✅ Construct FormData for both create and update
+    const payload = new FormData();
+
+    payload.append("vendorName", formData.vendorName);
+    payload.append("registerAddress", formData.registerAddress);
+    payload.append("gstNo", formData.gstNo);
+    payload.append("businessType", formData.businessType || "");
+    payload.append("state", formData.state);
+    payload.append("city", formData.city);
+    payload.append("emailId", formData.emailId);
+    payload.append("website", formData.website);
+    payload.append("creditTerms", formData.creditTerms);
+    payload.append("creditLimit", formData.creditLimit);
+    payload.append("remark", formData.remark);
+    payload.append("products", JSON.stringify(formData.products));
+    payload.append("contacts", JSON.stringify(validContacts));
+    payload.append("bankDetails", JSON.stringify(validBanks));
+
+    if (gstPdfFile) {
+      payload.append("gstCertificate", gstPdfFile);
     }
 
-    // At least one contact must be valid
-    const validContacts = formData.contacts.filter(
-      (c) =>
-        c.firstName.trim() || c.lastName.trim() || c.contactPhoneNumber.trim()
-    );
-    if (validContacts.length === 0) {
-      alert("Please add at least one valid contact.");
-      return;
-    }
-
-    // At least one bank detail must be valid
-    const validBanks = formData.bankDetails.filter(
-      (b) => b.accountNumber.trim() || b.ifscCode.trim() || b.bankName.trim()
-    );
-
-
-    try {
-      if (formData.id) {
-        await axios.put(`http://localhost:8000/vendors/${formData.id}`, {
-          ...formData,
-          contacts: validContacts,
-          bankDetails: validBanks,
-        });
-      } else {
-        const payload = new FormData();
-
-        payload.append("vendorName", formData.vendorName);
-        payload.append("registerAddress", formData.registerAddress);
-        payload.append("gstNo", formData.gstNo);
-        payload.append("businessType", formData.businessType || "");
-        payload.append("state", formData.state);
-        payload.append("city", formData.city);
-        payload.append("emailId", formData.emailId);
-        payload.append("website", formData.website);
-        payload.append("creditTerms", formData.creditTerms);
-        payload.append("creditLimit", formData.creditLimit);
-        payload.append("remark", formData.remark);
-        payload.append("products", JSON.stringify(formData.products));
-        payload.append("contacts", JSON.stringify(validContacts));
-        payload.append("bankDetails", JSON.stringify(validBanks));
-
-        if (gstPdfFile) {
-          payload.append("gstCertificate", gstPdfFile);
-        }
-
-        await axios.post("http://localhost:8000/vendors", payload, {
+    // ✅ Choose endpoint based on whether it's create or update
+    if (formData.id) {
+      await axios.put(
+        `http://192.168.29.225:8000/vendors/${formData.id}`,
+        payload,
+        {
           headers: { "Content-Type": "multipart/form-data" },
-        });
-      }
-
-      alert(
-        formData.id
-          ? "Vendor updated successfully!"
-          : "Vendor created successfully!"
+        }
       );
-      setFormData(initialFormState);
-      setIsCreateModalOpen(false);
-      fetchVendors();
-    } catch (err) {
-      console.error("Error creating vendor:", err);
-      alert("Failed to create vendor. Please try again.");
+    } else {
+      await axios.post("http://192.168.29.225:8000/vendors", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
     }
-  };
+
+    // ✅ Success feedback
+    alert(
+      formData.id
+        ? "Vendor updated successfully!"
+        : "Vendor created successfully!"
+    );
+    setFormData(initialFormState);
+    setGstPdfFile(null); // Reset file
+    setIsCreateModalOpen(false);
+    fetchVendors();
+  } catch (err) {
+    console.error("Error saving vendor:", err);
+    alert("Failed to save vendor. Please try again.");
+  }
+};
 
   return (
     <div className="flex-1 p-6 overflow-auto lg:ml-72 ">
@@ -296,7 +298,7 @@ const VendorTable: React.FC = () => {
       setFormData(initialFormState); // clear form
       setIsCreateModalOpen(true);
     }}
-    className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300 w-full md:w-auto"
+    className="bg-gradient-to-r cursor-pointer from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 transition-transform duration-300 w-full md:w-auto"
   >
     Add Company
   </button>
@@ -350,7 +352,7 @@ const VendorTable: React.FC = () => {
                 <td className="p-2 border text-blue-900">
                   {vendor.gstpdf ? (
                     <a
-                      href={`http://localhost:8000/gst/${vendor.gstpdf}`}
+                      href={`http://192.168.29.225:8000/gst/${vendor.gstpdf}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -474,28 +476,43 @@ const VendorTable: React.FC = () => {
                 </div>
 
                 <div className="mt-4">
-                  <label className="font-semibold block mb-2">
-                    GST Certificate (PDF)
-                  </label>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file && file.type === "application/pdf") {
-                        setGstPdfFile(file);
-                      } else {
-                        alert("Please upload a valid PDF file.");
-                      }
-                    }}
-                    className="block w-full border p-2 rounded"
-                  />
-                  {gstPdfFile && (
-                    <p className="text-sm text-green-700 mt-1">
-                      {gstPdfFile.name}
-                    </p>
-                  )}
-                </div>
+  <label className="font-semibold block mb-2">
+    GST Certificate (PDF)
+  </label>
+
+  {/* File input for uploading new PDF */}
+  <input
+    type="file"
+    accept="application/pdf"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file && file.type === "application/pdf") {
+        setGstPdfFile(file);
+      } else {
+        alert("Please upload a valid PDF file.");
+      }
+    }}
+    className="block w-full border p-2 rounded"
+  />
+
+  {/* Show newly selected file name */}
+  {gstPdfFile && (
+    <p className="text-sm text-green-700 mt-1">{gstPdfFile.name}</p>
+  )}
+
+  {/* Show existing GST PDF link if editing and PDF exists */}
+  {!gstPdfFile && formData.gstpdf && (
+    <a
+      href={`http://192.168.29.225:8000/gst/${formData.gstpdf}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 underline text-sm mt-2 block"
+    >
+      View existing GST certificate
+    </a>
+  )}
+</div>
+
 
                 <div className="mt-6">
                   <label className="font-semibold block mb-2">
